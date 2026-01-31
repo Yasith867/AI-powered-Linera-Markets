@@ -5,9 +5,10 @@ import {
   detectLineraWallet, 
   shortenAddress, 
   connectLineraWallet,
-  getCurrentAccount,
-  placeTrade,
-  getConnectedWallet
+  getConnectedAddress,
+  isWalletConnected,
+  signAndSendOperation,
+  getWeb3Instance
 } from "../lib/linera-wallet";
 
 interface Trade {
@@ -40,7 +41,6 @@ export default function MarketDetail() {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [amount, setAmount] = useState("");
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [chainId, setChainId] = useState<string | null>(null);
   const [txStatus, setTxStatus] = useState<string | null>(null);
   const api = useApi();
 
@@ -52,10 +52,23 @@ export default function MarketDetail() {
   }, [params?.id]);
 
   const checkWalletConnection = async () => {
-    const account = getCurrentAccount();
-    if (account) {
-      setWalletAddress(account.owner);
-      setChainId(account.chainId);
+    const address = getConnectedAddress();
+    if (address) {
+      setWalletAddress(address);
+    } else {
+      const { installed } = detectLineraWallet();
+      if (installed) {
+        const web3 = getWeb3Instance();
+        if (web3) {
+          try {
+            const accounts = await web3.eth.getAccounts();
+            if (accounts.length > 0) {
+              setWalletAddress(accounts[0]);
+            }
+          } catch {
+          }
+        }
+      }
     }
   };
 
@@ -73,57 +86,57 @@ export default function MarketDetail() {
     try {
       const { installed } = detectLineraWallet();
       let traderAddress = walletAddress;
-      let traderChainId = chainId;
       
-      if (installed && !getConnectedWallet()) {
-        setTxStatus("Connecting to Linera wallet...");
+      if (installed && !isWalletConnected()) {
+        setTxStatus("Connecting to CheCko wallet...");
         const result = await connectLineraWallet();
         if (result.success && result.address) {
           traderAddress = result.address;
-          traderChainId = result.chainId || null;
           setWalletAddress(result.address);
-          setChainId(result.chainId || null);
+        } else if (result.error) {
+          setTxStatus(result.error);
+          setTimeout(() => setTxStatus(null), 3000);
+          setTrading(false);
+          return;
         }
       }
       
-      if (traderAddress && getConnectedWallet()) {
-        setTxStatus("🦎 Please confirm transaction in your wallet...");
+      if (traderAddress && isWalletConnected()) {
+        setTxStatus("🦎 Please sign the operation in CheCko wallet...");
         
         const marketId = parseInt(params?.id || "0");
-        const tradeResult = await placeTrade(
+        const signResult = await signAndSendOperation({
+          action: isBuy ? 'buy' : 'sell',
           marketId,
-          selectedOption,
-          parseFloat(amount),
-          isBuy
-        );
+          optionIndex: selectedOption,
+          amount: parseFloat(amount)
+        });
         
-        if (tradeResult.success) {
-          setTxStatus(`Transaction confirmed! Hash: ${shortenAddress(tradeResult.txHash || '', 8)}`);
+        if (signResult.success) {
+          setTxStatus(`Signed! Submitting to Linera microchain...`);
           
           await api.post(`/api/markets/${params?.id}/trade`, {
             traderAddress,
-            chainId: traderChainId,
             optionIndex: selectedOption,
             amount: parseFloat(amount),
             isBuy,
-            txHash: tradeResult.txHash,
+            signature: signResult.txHash,
           });
           
-          setTimeout(() => setTxStatus("Trade executed on Linera! (~200ms finality)"), 1000);
+          setTxStatus("Trade executed on Linera! (~200ms finality)");
           setTimeout(() => setTxStatus(null), 4000);
-        } else if (tradeResult.error?.includes('rejected')) {
+        } else if (signResult.error?.includes('rejected')) {
           setTxStatus("Transaction cancelled by user");
           setTimeout(() => setTxStatus(null), 3000);
         } else {
-          setTxStatus(`Recording trade on Linera...`);
+          setTxStatus(`Submitting trade without signature...`);
           await api.post(`/api/markets/${params?.id}/trade`, {
             traderAddress,
-            chainId: traderChainId,
             optionIndex: selectedOption,
             amount: parseFloat(amount),
             isBuy,
           });
-          setTxStatus("Trade recorded on Linera microchain!");
+          setTxStatus("Trade recorded on Linera!");
           setTimeout(() => setTxStatus(null), 3000);
         }
       } else if (traderAddress) {
@@ -263,25 +276,18 @@ export default function MarketDetail() {
             <div className="card bg-gray-800/30">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-medium text-white">Place Trade</h3>
-                <div className="flex items-center gap-2">
-                  {chainId && (
-                    <span className="text-xs text-cyan-400 font-mono bg-cyan-500/10 px-2 py-1 rounded">
-                      Chain: {shortenAddress(chainId, 4)}
-                    </span>
-                  )}
-                  {walletAddress && (
-                    <span className="text-xs text-green-400 font-mono bg-green-500/10 px-2 py-1 rounded">
-                      {shortenAddress(walletAddress, 6)}
-                    </span>
-                  )}
-                </div>
+                {walletAddress && (
+                  <span className="text-xs text-green-400 font-mono bg-green-500/10 px-2 py-1 rounded">
+                    {shortenAddress(walletAddress, 6)}
+                  </span>
+                )}
               </div>
               
               {txStatus && (
                 <div className={`mb-3 p-3 rounded-lg text-sm ${
-                  txStatus.includes('confirm') || txStatus.includes('Connecting') || txStatus.includes('Please')
+                  txStatus.includes('sign') || txStatus.includes('Connecting') || txStatus.includes('Please')
                     ? 'bg-yellow-500/10 border border-yellow-500/30 text-yellow-400'
-                    : txStatus.includes('success') || txStatus.includes('executed') || txStatus.includes('confirmed') || txStatus.includes('recorded')
+                    : txStatus.includes('success') || txStatus.includes('executed') || txStatus.includes('Signed') || txStatus.includes('recorded')
                     ? 'bg-green-500/10 border border-green-500/30 text-green-400'
                     : txStatus.includes('cancelled') || txStatus.includes('failed') || txStatus.includes('rejected')
                     ? 'bg-red-500/10 border border-red-500/30 text-red-400'
