@@ -182,8 +182,8 @@ export default function Header({ isConnected }: HeaderProps) {
                 )}
               </div>
 
-              <div className="px-3 py-1.5 rounded-lg wallet-badge">
-                <span className="text-xs font-mono text-purple-400">Testnet Conway</span>
+              <div className="px-2 py-1 rounded-lg bg-gray-800/50 border border-purple-500/30">
+                <span className="text-xs font-mono text-purple-400">Testnet</span>
               </div>
 
               {walletConnected ? (
@@ -204,9 +204,9 @@ export default function Header({ isConnected }: HeaderProps) {
                 <button
                   onClick={handleConnectClick}
                   disabled={connecting}
-                  className="btn-neon-cyan text-sm disabled:opacity-50"
+                  className="px-3 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 text-xs font-semibold hover:bg-cyan-500/30 transition-all disabled:opacity-50"
                 >
-                  {connecting ? 'Connecting...' : 'Connect Wallet'}
+                  {connecting ? 'Connecting...' : 'Connect'}
                 </button>
               )}
             </div>
