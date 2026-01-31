@@ -7,6 +7,7 @@ import MarketDetail from "./pages/MarketDetail";
 import Oracles from "./pages/Oracles";
 import Bots from "./pages/Bots";
 import Analytics from "./pages/Analytics";
+import Demo from "./pages/Demo";
 import { useWebSocket } from "./hooks/useWebSocket";
 
 export default function App() {
@@ -42,6 +43,7 @@ export default function App() {
       <main className="container mx-auto px-4 py-6">
         <Switch>
           <Route path="/" component={Dashboard} />
+          <Route path="/demo" component={Demo} />
           <Route path="/markets" component={Markets} />
           <Route path="/markets/:id" component={MarketDetail} />
           <Route path="/oracles" component={Oracles} />

@@ -79,15 +79,17 @@ npm run build        # Build for production
 ## Recent Changes
 
 - Initial Wave 5 buildathon submission
-- Complete frontend with Dashboard, Markets, Oracles, Bots, Analytics pages
+- Complete frontend with Dashboard, Demo, Markets, Oracles, Bots, Analytics pages
+- **Demo page** showcasing all features, architecture, contracts, and deployment steps
 - Backend API with WebSocket real-time updates
 - Linera Rust contracts for all 4 components
 - AI market creation using GPT-5.2
 - Oracle consensus with 67% threshold
 - Three trading bot strategies
-- CheCko wallet integration using Web3.js API pattern
+- CheCko wallet integration using linera_graphqlMutation RPC
 - Neon/cyberpunk UI theme with glowing effects
 - Real-time server status indicator
+- Centralized app ID configuration (linera-config.ts)
 
 ## Smart Contract Deployment
 

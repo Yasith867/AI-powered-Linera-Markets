@@ -117,6 +117,7 @@ export default function Header({ isConnected }: HeaderProps) {
 
   const navItems = [
     { path: "/", label: "Dashboard" },
+    { path: "/demo", label: "Demo" },
     { path: "/markets", label: "Markets" },
     { path: "/oracles", label: "Oracles" },
     { path: "/bots", label: "Bots" },
