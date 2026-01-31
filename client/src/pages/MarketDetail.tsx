@@ -48,7 +48,7 @@ export default function MarketDetail() {
   const [amount, setAmount] = useState("");
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [txStatus, setTxStatus] = useState<string | null>(null);
-  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [walletBalance, setWalletBalance] = useState<number>(20);
   const [balanceError, setBalanceError] = useState<string | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingTrade, setPendingTrade] = useState<{

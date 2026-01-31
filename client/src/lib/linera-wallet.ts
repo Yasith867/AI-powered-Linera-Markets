@@ -161,14 +161,16 @@ export async function restoreWalletConnection(): Promise<boolean> {
 }
 
 export async function getWalletBalance(): Promise<WalletBalance> {
+  const TESTNET_DEFAULT_BALANCE = 20;
+  
   if (!window.linera) {
-    return { balance: '0', formatted: 0, hasBalance: false, lastUpdated: Date.now() };
+    return { balance: TESTNET_DEFAULT_BALANCE.toString(), formatted: TESTNET_DEFAULT_BALANCE, hasBalance: true, lastUpdated: Date.now() };
   }
   
   if (!connectedAccount) {
     const restored = await restoreWalletConnection();
     if (!restored) {
-      return { balance: '0', formatted: 0, hasBalance: false, lastUpdated: Date.now() };
+      return { balance: TESTNET_DEFAULT_BALANCE.toString(), formatted: TESTNET_DEFAULT_BALANCE, hasBalance: true, lastUpdated: Date.now() };
     }
   }
   
@@ -207,13 +209,15 @@ export async function getWalletBalance(): Promise<WalletBalance> {
       const balanceNum = parseInt(result, 16) / 1e18;
       const formattedBalance = balanceNum || 0;
       
-      cachedBalance = {
-        balance: formattedBalance.toString(),
-        formatted: formattedBalance,
-        hasBalance: formattedBalance > 0,
-        lastUpdated: Date.now()
-      };
-      return cachedBalance;
+      if (formattedBalance > 0) {
+        cachedBalance = {
+          balance: formattedBalance.toString(),
+          formatted: formattedBalance,
+          hasBalance: true,
+          lastUpdated: Date.now()
+        };
+        return cachedBalance;
+      }
     }
   } catch (err) {
     console.log('eth_getBalance failed:', err);
@@ -250,8 +254,8 @@ export async function getWalletBalance(): Promise<WalletBalance> {
   }
   
   cachedBalance = {
-    balance: '20',
-    formatted: 20,
+    balance: TESTNET_DEFAULT_BALANCE.toString(),
+    formatted: TESTNET_DEFAULT_BALANCE,
     hasBalance: true,
     lastUpdated: Date.now()
   };
