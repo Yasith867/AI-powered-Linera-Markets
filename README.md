@@ -181,6 +181,15 @@ impl Contract for PredictionMarketContract {
 }
 ```
 
+## 📊 Linera Integration Details
+
+| Component | Value |
+|-----------|-------|
+| **Linera SDK** | v0.15 |
+| **Testnet Target** | Conway |
+| **Smart Contracts** | 4 |
+| **Language** | Rust (WASM Compiled) |
+
 ## 📊 Linera Features Used
 
 | Feature | Implementation |

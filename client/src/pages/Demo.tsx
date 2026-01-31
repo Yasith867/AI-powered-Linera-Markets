@@ -211,27 +211,6 @@ export default function Demo() {
             </div>
           </div>
 
-          <div className="card">
-            <h4 className="text-lg font-bold text-white mb-4">Linera Integration Details</h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div className="p-3 bg-gray-800/50 rounded-lg">
-                <div className="text-2xl font-bold text-green-400">v0.15</div>
-                <div className="text-xs text-gray-400">Linera SDK</div>
-              </div>
-              <div className="p-3 bg-gray-800/50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-400">Conway</div>
-                <div className="text-xs text-gray-400">Testnet Target</div>
-              </div>
-              <div className="p-3 bg-gray-800/50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-400">4</div>
-                <div className="text-xs text-gray-400">Smart Contracts</div>
-              </div>
-              <div className="p-3 bg-gray-800/50 rounded-lg">
-                <div className="text-2xl font-bold text-orange-400">Rust</div>
-                <div className="text-xs text-gray-400">WASM Compiled</div>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
