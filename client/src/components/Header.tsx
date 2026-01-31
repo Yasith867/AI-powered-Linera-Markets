@@ -130,14 +130,9 @@ export default function Header({ isConnected }: HeaderProps) {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <Link href="/">
-              <div className="flex items-center gap-3 cursor-pointer group shrink-0">
-                <img 
-                  src="/linera-logo.png" 
-                  alt="Linera Markets" 
-                  className="w-10 h-10 rounded-lg shrink-0"
-                />
+              <div className="flex items-center cursor-pointer group shrink-0">
                 <div className="shrink-0">
-                  <h1 className="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors whitespace-nowrap">
+                  <h1 className="text-xl font-bold text-white group-hover:text-indigo-300 transition-colors whitespace-nowrap">
                     Linera Markets
                   </h1>
                   <p className="text-xs text-gray-400 whitespace-nowrap">AI-Powered Predictions</p>
