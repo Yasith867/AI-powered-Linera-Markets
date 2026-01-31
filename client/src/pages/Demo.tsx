@@ -10,7 +10,7 @@ interface DemoStats {
 
 export default function Demo() {
   const [stats, setStats] = useState<DemoStats | null>(null);
-  const [activeTab, setActiveTab] = useState<"features" | "architecture" | "contracts" | "live">("features");
+  const [activeTab, setActiveTab] = useState<"features" | "live">("features");
 
   useEffect(() => {
     fetchStats();
@@ -69,10 +69,10 @@ export default function Demo() {
       </div>
 
       <div className="flex gap-2 border-b border-gray-800 pb-2">
-        {(["features", "architecture", "contracts", "live"] as const).map((tab) => (
+        {(["features", "live"] as const).map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab as typeof activeTab)}
+            onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 rounded-t-lg capitalize transition-colors ${
               activeTab === tab
                 ? "bg-green-500/20 text-green-400 border-b-2 border-green-500"
@@ -152,135 +152,6 @@ export default function Demo() {
               </Link>
             }
           />
-        </div>
-      )}
-
-      {activeTab === "architecture" && (
-        <div className="card">
-          <h3 className="text-xl font-bold text-white mb-6">System Architecture</h3>
-          <div className="font-mono text-sm overflow-x-auto">
-            <pre className="text-gray-300 whitespace-pre">
-{`┌─────────────────────────────────────────────────────────────────┐
-│                    FRONTEND (React + Vite)                       │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
-│  │  Dashboard  │  │   Markets   │  │  Analytics  │              │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘              │
-│         │                │                │                      │
-│         └────────────────┼────────────────┘                      │
-│                          │                                       │
-│                    ┌─────▼─────┐                                 │
-│                    │  API Hook │  WebSocket                      │
-└────────────────────┴─────┬─────┴─────────────────────────────────┘
-                           │ HTTP / WS
-┌──────────────────────────▼──────────────────────────────────────┐
-│                    BACKEND (Express.js)                          │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐        │
-│  │ Markets  │  │    AI    │  │ Oracles  │  │   Bots   │        │
-│  │  Routes  │  │  Routes  │  │  Routes  │  │  Routes  │        │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘        │
-│       │             │             │             │                │
-│       │        ┌────▼────┐        │             │                │
-│       │        │ OpenAI  │        │             │                │
-│       │        │ GPT-5.2 │        │             │                │
-│       │        └─────────┘        │             │                │
-│       │                           │             │                │
-│  ┌────▼───────────────────────────▼─────────────▼───┐           │
-│  │              Linera Client (Simulation)          │           │
-│  │         invokeMarketContract() / executeOp()     │           │
-│  └──────────────────────┬───────────────────────────┘           │
-└─────────────────────────┼───────────────────────────────────────┘
-                          │ SQL
-┌─────────────────────────▼───────────────────────────────────────┐
-│                   DATABASE (PostgreSQL)                          │
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐   │
-│  │ markets │ │ trades  │ │ oracles │ │  bots   │ │ events  │   │
-│  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-                          │
-                          ▼ (When deployed)
-┌─────────────────────────────────────────────────────────────────┐
-│                 LINERA BLOCKCHAIN (Testnet Conway)               │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
-│  │ Market Contract │  │ Oracle Contract │  │  AMM Contract   │  │
-│  │   (Rust/WASM)   │  │   (Rust/WASM)   │  │   (Rust/WASM)   │  │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘  │
-│                                                                  │
-│  CheCko Wallet ──► linera_graphqlMutation ──► On-chain TX       │
-└─────────────────────────────────────────────────────────────────┘`}
-            </pre>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "contracts" && (
-        <div className="space-y-6">
-          <div className="card">
-            <h3 className="text-xl font-bold text-white mb-4">Smart Contracts (Rust/WASM)</h3>
-            <p className="text-gray-400 mb-6">
-              Four Linera smart contracts following SDK v0.15 patterns with RootView state management.
-            </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <ContractCard
-                name="Prediction Market"
-                path="contracts/market/"
-                operations={["CreateMarket", "PlaceTrade", "ResolveMarket", "ClaimPayout"]}
-                description="Core prediction market logic with AMM pricing"
-              />
-              <ContractCard
-                name="Oracle Network"
-                path="contracts/oracle/"
-                operations={["RegisterOracle", "SubmitVote", "CheckConsensus"]}
-                description="Decentralized oracle with 67% weighted consensus"
-              />
-              <ContractCard
-                name="AMM Pool"
-                path="contracts/amm/"
-                operations={["CreatePool", "AddLiquidity", "Swap"]}
-                description="Automated market maker with constant product formula"
-              />
-              <ContractCard
-                name="Trading Bot"
-                path="contracts/bot/"
-                operations={["Configure", "Execute", "Start", "Stop"]}
-                description="Automated trading on dedicated microchains"
-              />
-            </div>
-          </div>
-
-          <div className="card bg-gradient-to-r from-gray-900 to-gray-800">
-            <h4 className="text-lg font-bold text-white mb-4">Contract Code Sample</h4>
-            <pre className="text-sm text-gray-300 overflow-x-auto">
-{`// contracts/market/src/contract.rs
-
-#[async_trait]
-impl Contract for PredictionMarketContract {
-    type Message = Message;
-    type Parameters = Parameters;
-    type InstantiationArgument = InstantiationArgument;
-
-    async fn instantiate(&mut self, argument: Self::InstantiationArgument) {
-        self.state.admin.set(argument.admin);
-        self.state.oracle_threshold.set(argument.oracle_threshold);
-    }
-
-    async fn execute_operation(&mut self, operation: Self::Operation) -> Self::Response {
-        match operation {
-            Operation::CreateMarket { title, options, liquidity } => {
-                let market_id = self.state.next_market_id.get() + 1;
-                self.state.next_market_id.set(market_id);
-                // Initialize market with equal odds
-                Response::MarketCreated { market_id }
-            }
-            Operation::PlaceTrade { market_id, option, amount, is_buy } => {
-                // AMM pricing logic
-                Response::TradeExecuted { tx_hash }
-            }
-        }
-    }
-}`}
-            </pre>
-          </div>
         </div>
       )}
 
