@@ -2,7 +2,9 @@ import Web3 from 'web3';
 
 declare global {
   interface Window {
-    linera?: unknown;
+    linera?: {
+      request: (args: { method: string; params?: unknown }) => Promise<unknown>;
+    };
   }
 }
 
@@ -13,17 +15,22 @@ export interface WalletState {
   isInstalled: boolean;
 }
 
+export interface LineraAccount {
+  publicKey: string;
+  chainId: string;
+}
+
 export const CHECKO_INSTALL_URL = 'https://github.com/respeer-ai/linera-wallet/releases';
 export const LINERA_DOCS_URL = 'https://linera.dev/developers/core_concepts/wallets.html';
 export const CROISSANT_INSTALL_URL = 'https://linera.dev';
 
 export const WALLET_STATUS = {
   EXPERIMENTAL: false,
-  NOTE: 'CheCko wallet uses Web3.js API for Linera blockchain integration.'
+  NOTE: 'CheCko wallet uses linera_graphqlMutation for on-chain transactions.'
 } as const;
 
 let web3Instance: Web3 | null = null;
-let connectedAddress: string | null = null;
+let connectedAccount: LineraAccount | null = null;
 
 export function detectLineraWallet(): { installed: boolean } {
   if (typeof window === 'undefined') {
@@ -47,6 +54,7 @@ export async function connectLineraWallet(): Promise<{
   success: boolean; 
   address?: string; 
   chainId?: string;
+  publicKey?: string;
   error?: string 
 }> {
   const { installed } = detectLineraWallet();
@@ -70,20 +78,18 @@ export async function connectLineraWallet(): Promise<{
       return { success: false, error: 'No accounts returned from CheCko wallet' };
     }
     
-    connectedAddress = accounts[0];
+    const address = accounts[0];
     
-    let chainId: string | undefined;
-    try {
-      const id = await web3.eth.getChainId();
-      chainId = id.toString();
-    } catch {
-      chainId = 'linera-testnet';
-    }
+    connectedAccount = {
+      publicKey: address,
+      chainId: address
+    };
     
     return {
       success: true,
-      address: accounts[0],
-      chainId
+      address,
+      publicKey: address,
+      chainId: address
     };
   } catch (err) {
     const error = err as Error;
@@ -106,100 +112,72 @@ export async function getAccounts(): Promise<string[]> {
   }
 }
 
-export async function getChainId(): Promise<string | null> {
-  const web3 = getWeb3Instance();
-  if (!web3) return null;
-  
-  try {
-    const chainId = await web3.eth.getChainId();
-    return chainId.toString();
-  } catch {
-    return null;
-  }
-}
-
 export async function disconnectLineraWallet(): Promise<void> {
   web3Instance = null;
-  connectedAddress = null;
+  connectedAccount = null;
 }
 
-export function getConnectedAddress(): string | null {
-  return connectedAddress;
+export function getConnectedAccount(): LineraAccount | null {
+  return connectedAccount;
 }
 
 export function isWalletConnected(): boolean {
-  return !!connectedAddress && !!web3Instance;
+  return !!connectedAccount && !!web3Instance;
 }
 
-export async function signAndSendOperation(
-  operation: {
-    action: string;
-    marketId: number;
-    optionIndex: number;
-    amount: number;
-  }
-): Promise<{ success: boolean; txHash?: string; error?: string }> {
-  const web3 = getWeb3Instance();
-  
-  if (!web3 || !connectedAddress) {
+export async function lineraGraphqlMutation(
+  applicationId: string | null,
+  query: string,
+  variables: Record<string, unknown> = {},
+  applicationOperationBytes?: number[]
+): Promise<{ success: boolean; operationId?: string; error?: string }> {
+  if (!window.linera) {
     return { success: false, error: 'Wallet not connected' };
   }
   
+  if (!connectedAccount) {
+    return { success: false, error: 'Please connect wallet first' };
+  }
+  
   try {
-    const operationData = JSON.stringify(operation);
-    const signature = await web3.eth.personal.sign(
-      operationData,
-      connectedAddress,
-      ''
-    );
-    
-    return {
-      success: true,
-      txHash: signature.slice(0, 66)
+    const params: {
+      publicKey: string;
+      applicationId?: string;
+      query: {
+        query: string;
+        variables: Record<string, unknown>;
+        applicationOperationBytes?: string;
+      };
+      operationName: string;
+    } = {
+      publicKey: connectedAccount.publicKey,
+      query: {
+        query,
+        variables
+      },
+      operationName: extractOperationName(query) || 'Mutation'
     };
-  } catch (err) {
-    const error = err as Error;
-    console.log('Sign operation error:', error);
     
-    if (error.message?.includes('User denied') || 
-        error.message?.includes('rejected') || 
-        error.message?.includes('cancel')) {
-      return { success: false, error: 'Transaction rejected by user' };
+    if (applicationId) {
+      params.applicationId = applicationId;
     }
     
-    return { 
-      success: false, 
-      error: error.message || 'Failed to sign operation' 
-    };
-  }
-}
-
-export async function sendTransaction(
-  to: string,
-  data: string,
-  value?: string
-): Promise<{ success: boolean; txHash?: string; error?: string }> {
-  const web3 = getWeb3Instance();
-  
-  if (!web3 || !connectedAddress) {
-    return { success: false, error: 'Wallet not connected' };
-  }
-  
-  try {
-    const tx = await web3.eth.sendTransaction({
-      from: connectedAddress,
-      to,
-      data: web3.utils.utf8ToHex(data),
-      value: value || '0'
-    });
+    if (applicationOperationBytes) {
+      params.query.applicationOperationBytes = JSON.stringify(applicationOperationBytes);
+    }
+    
+    const result = await window.linera.request({
+      method: 'linera_graphqlMutation',
+      params
+    }) as { operationId?: string };
     
     return {
       success: true,
-      txHash: tx.transactionHash?.toString()
+      operationId: result?.operationId
     };
   } catch (err) {
     const error = err as Error;
-    console.log('Send transaction error:', error);
+    console.log('GraphQL mutation error:', error);
     
     if (error.message?.includes('User denied') || 
         error.message?.includes('rejected') || 
@@ -212,6 +190,66 @@ export async function sendTransaction(
       error: error.message || 'Transaction failed' 
     };
   }
+}
+
+export async function lineraGraphqlQuery(
+  applicationId: string | null,
+  query: string,
+  variables: Record<string, unknown> = {}
+): Promise<{ success: boolean; data?: unknown; error?: string }> {
+  if (!window.linera) {
+    return { success: false, error: 'Wallet not connected' };
+  }
+  
+  if (!connectedAccount) {
+    return { success: false, error: 'Please connect wallet first' };
+  }
+  
+  try {
+    const params: {
+      publicKey: string;
+      applicationId?: string;
+      query: {
+        query: string;
+        variables: Record<string, unknown>;
+      };
+      operationName: string;
+    } = {
+      publicKey: connectedAccount.publicKey,
+      query: {
+        query,
+        variables
+      },
+      operationName: extractOperationName(query) || 'Query'
+    };
+    
+    if (applicationId) {
+      params.applicationId = applicationId;
+    }
+    
+    const result = await window.linera.request({
+      method: 'linera_graphqlQuery',
+      params
+    });
+    
+    return {
+      success: true,
+      data: result
+    };
+  } catch (err) {
+    const error = err as Error;
+    console.log('GraphQL query error:', error);
+    
+    return { 
+      success: false, 
+      error: error.message || 'Query failed' 
+    };
+  }
+}
+
+function extractOperationName(query: string): string | null {
+  const match = query.match(/(?:mutation|query)\s+(\w+)/);
+  return match ? match[1] : null;
 }
 
 export function generateMockAddress(): string {
@@ -229,22 +267,47 @@ export function shortenAddress(address: string, chars = 6): string {
   return `${address.slice(0, chars)}...${address.slice(-chars)}`;
 }
 
+export const PREDICTION_MARKET_APP_ID = 'e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65010000000000000000000000e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65030000000000000000000000';
+
 export async function placeTrade(
   marketId: number, 
   optionIndex: number, 
   amount: number, 
   isBuy: boolean
-): Promise<{ success: boolean; txHash?: string; error?: string }> {
-  if (!connectedAddress) {
-    return { success: false, error: 'Wallet not connected' };
-  }
+): Promise<{ success: boolean; operationId?: string; error?: string }> {
+  const mutation = `
+    mutation PlaceTrade($marketId: Int!, $optionIndex: Int!, $amount: Float!, $isBuy: Boolean!) {
+      placeTrade(marketId: $marketId, optionIndex: $optionIndex, amount: $amount, isBuy: $isBuy) {
+        success
+        txHash
+      }
+    }
+  `;
   
-  const result = await signAndSendOperation({
-    action: isBuy ? 'buy' : 'sell',
-    marketId,
-    optionIndex,
-    amount
-  });
+  return await lineraGraphqlMutation(
+    PREDICTION_MARKET_APP_ID,
+    mutation,
+    { marketId, optionIndex, amount, isBuy }
+  );
+}
+
+export async function transferTokens(
+  recipient: string,
+  amount: string
+): Promise<{ success: boolean; operationId?: string; error?: string }> {
+  const mutation = `
+    mutation Transfer($owner: String, $amount: String!, $targetAccount: String!) {
+      transfer(owner: $owner, amount: $amount, targetAccount: $targetAccount)
+    }
+  `;
   
-  return result;
+  return await lineraGraphqlMutation(
+    null,
+    mutation,
+    { 
+      owner: null, 
+      amount, 
+      targetAccount: recipient 
+    }
+  );
 }

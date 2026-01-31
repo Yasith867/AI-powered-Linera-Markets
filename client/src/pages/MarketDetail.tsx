@@ -5,10 +5,11 @@ import {
   detectLineraWallet, 
   shortenAddress, 
   connectLineraWallet,
-  getConnectedAddress,
+  getConnectedAccount,
   isWalletConnected,
-  signAndSendOperation,
-  getWeb3Instance
+  lineraGraphqlMutation,
+  getWeb3Instance,
+  PREDICTION_MARKET_APP_ID
 } from "../lib/linera-wallet";
 
 interface Trade {
@@ -52,9 +53,9 @@ export default function MarketDetail() {
   }, [params?.id]);
 
   const checkWalletConnection = async () => {
-    const address = getConnectedAddress();
-    if (address) {
-      setWalletAddress(address);
+    const account = getConnectedAccount();
+    if (account) {
+      setWalletAddress(account.publicKey);
     } else {
       const { installed } = detectLineraWallet();
       if (installed) {
@@ -102,42 +103,56 @@ export default function MarketDetail() {
       }
       
       if (traderAddress && isWalletConnected()) {
-        setTxStatus("🦎 Please sign the operation in CheCko wallet...");
+        setTxStatus("🦎 Sending transaction to CheCko wallet...");
         
         const marketId = parseInt(params?.id || "0");
-        const signResult = await signAndSendOperation({
-          action: isBuy ? 'buy' : 'sell',
-          marketId,
-          optionIndex: selectedOption,
-          amount: parseFloat(amount)
-        });
         
-        if (signResult.success) {
-          setTxStatus(`Signed! Submitting to Linera microchain...`);
+        const mutation = `
+          mutation PlaceTrade($marketId: Int!, $optionIndex: Int!, $amount: Float!, $isBuy: Boolean!) {
+            placeTrade(marketId: $marketId, optionIndex: $optionIndex, amount: $amount, isBuy: $isBuy) {
+              success
+            }
+          }
+        `;
+        
+        const mutationResult = await lineraGraphqlMutation(
+          PREDICTION_MARKET_APP_ID,
+          mutation,
+          {
+            marketId,
+            optionIndex: selectedOption,
+            amount: parseFloat(amount),
+            isBuy
+          }
+        );
+        
+        if (mutationResult.success) {
+          setTxStatus(`Transaction submitted! Operation: ${mutationResult.operationId?.slice(0, 8) || 'pending'}...`);
           
           await api.post(`/api/markets/${params?.id}/trade`, {
             traderAddress,
             optionIndex: selectedOption,
             amount: parseFloat(amount),
             isBuy,
-            signature: signResult.txHash,
+            operationId: mutationResult.operationId,
           });
           
-          setTxStatus("Trade executed on Linera! (~200ms finality)");
-          setTimeout(() => setTxStatus(null), 4000);
-        } else if (signResult.error?.includes('rejected')) {
+          setTimeout(() => setTxStatus("Trade executed on Linera! (~200ms finality)"), 1500);
+          setTimeout(() => setTxStatus(null), 5000);
+        } else if (mutationResult.error?.includes('rejected')) {
           setTxStatus("Transaction cancelled by user");
           setTimeout(() => setTxStatus(null), 3000);
         } else {
-          setTxStatus(`Submitting trade without signature...`);
+          setTxStatus(`Error: ${mutationResult.error || 'Unknown error'}. Falling back...`);
+          
           await api.post(`/api/markets/${params?.id}/trade`, {
             traderAddress,
             optionIndex: selectedOption,
             amount: parseFloat(amount),
             isBuy,
           });
-          setTxStatus("Trade recorded on Linera!");
-          setTimeout(() => setTxStatus(null), 3000);
+          setTimeout(() => setTxStatus("Trade recorded (wallet mutation unavailable)"), 1000);
+          setTimeout(() => setTxStatus(null), 4000);
         }
       } else if (traderAddress) {
         setTxStatus("Submitting trade to Linera microchain...");
@@ -172,7 +187,7 @@ export default function MarketDetail() {
       if (err.message?.includes('rejected') || err.message?.includes('denied')) {
         setTxStatus("Transaction rejected by user");
       } else {
-        setTxStatus("Trade failed. Please try again.");
+        setTxStatus(`Trade failed: ${err.message || 'Unknown error'}`);
       }
       setTimeout(() => setTxStatus(null), 3000);
     } finally {
@@ -285,11 +300,11 @@ export default function MarketDetail() {
               
               {txStatus && (
                 <div className={`mb-3 p-3 rounded-lg text-sm ${
-                  txStatus.includes('sign') || txStatus.includes('Connecting') || txStatus.includes('Please')
+                  txStatus.includes('Sending') || txStatus.includes('Connecting') || txStatus.includes('submitted')
                     ? 'bg-yellow-500/10 border border-yellow-500/30 text-yellow-400'
-                    : txStatus.includes('success') || txStatus.includes('executed') || txStatus.includes('Signed') || txStatus.includes('recorded')
+                    : txStatus.includes('success') || txStatus.includes('executed') || txStatus.includes('finality')
                     ? 'bg-green-500/10 border border-green-500/30 text-green-400'
-                    : txStatus.includes('cancelled') || txStatus.includes('failed') || txStatus.includes('rejected')
+                    : txStatus.includes('cancelled') || txStatus.includes('failed') || txStatus.includes('rejected') || txStatus.includes('Error')
                     ? 'bg-red-500/10 border border-red-500/30 text-red-400'
                     : 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-400'
                 }`}>
