@@ -15,12 +15,12 @@ interface MarketCardProps {
 }
 
 const categoryColors: Record<string, string> = {
-  crypto: "bg-orange-500/20 text-orange-400 border-orange-500/30",
-  sports: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  technology: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-  politics: "bg-red-500/20 text-red-400 border-red-500/30",
-  entertainment: "bg-pink-500/20 text-pink-400 border-pink-500/30",
-  general: "bg-gray-500/20 text-gray-400 border-gray-500/30",
+  crypto: "from-orange-500/20 to-amber-500/20 text-orange-400 border-orange-500/30",
+  sports: "from-cyan-500/20 to-blue-500/20 text-cyan-400 border-cyan-500/30",
+  technology: "from-purple-500/20 to-pink-500/20 text-purple-400 border-purple-500/30",
+  politics: "from-red-500/20 to-rose-500/20 text-red-400 border-red-500/30",
+  entertainment: "from-pink-500/20 to-fuchsia-500/20 text-pink-400 border-pink-500/30",
+  general: "from-gray-500/20 to-slate-500/20 text-gray-400 border-gray-500/30",
 };
 
 export default function MarketCard({ market }: MarketCardProps) {
@@ -28,17 +28,18 @@ export default function MarketCard({ market }: MarketCardProps) {
 
   return (
     <Link href={`/markets/${market.id}`}>
-      <div className="card hover:border-green-500/50 transition-all cursor-pointer group">
+      <div className="card hover:border-green-500/40 transition-all duration-300 cursor-pointer group hover:shadow-[0_0_30px_rgba(0,255,136,0.1)]">
         <div className="flex items-start justify-between mb-3">
-          <span className={`text-xs px-2 py-1 rounded-full border ${categoryClass}`}>
+          <span className={`text-xs px-2.5 py-1 rounded-full bg-gradient-to-r ${categoryClass} border font-semibold`}>
             {market.category}
           </span>
           <span
-            className={`text-xs px-2 py-1 rounded-full ${
+            className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
               market.status === "active"
-                ? "bg-green-500/20 text-green-400"
-                : "bg-gray-500/20 text-gray-400"
+                ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                : "bg-gray-500/20 text-gray-400 border border-gray-500/30"
             }`}
+            style={market.status === "active" ? { boxShadow: '0 0 10px rgba(0, 255, 136, 0.3)' } : {}}
           >
             {market.status}
           </span>
@@ -48,18 +49,25 @@ export default function MarketCard({ market }: MarketCardProps) {
           {market.title}
         </h3>
 
-        <div className="mt-4 space-y-2">
-          {market.options.slice(0, 3).map((option, idx) => (
+        <div className="mt-4 space-y-2.5">
+          {market.options.slice(0, 2).map((option, idx) => (
             <div key={idx} className="flex items-center justify-between">
-              <span className="text-sm text-gray-400 truncate flex-1">{option}</span>
+              <span className="text-sm text-gray-300 truncate flex-1">{option}</span>
               <div className="flex items-center gap-2">
-                <div className="w-16 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                <div className="w-20 h-2 bg-gray-800/80 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full"
-                    style={{ width: `${(market.odds[idx] || 0) * 100}%` }}
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ 
+                      width: `${(market.odds[idx] || 0) * 100}%`,
+                      background: 'linear-gradient(90deg, #00ff88, #00aaff)',
+                      boxShadow: '0 0 10px rgba(0, 255, 136, 0.5)',
+                    }}
                   />
                 </div>
-                <span className="text-xs font-mono text-green-400 w-12 text-right">
+                <span 
+                  className="text-xs font-mono text-green-400 w-14 text-right"
+                  style={{ textShadow: '0 0 5px rgba(0, 255, 136, 0.5)' }}
+                >
                   {((market.odds[idx] || 0) * 100).toFixed(1)}%
                 </span>
               </div>
@@ -67,10 +75,12 @@ export default function MarketCard({ market }: MarketCardProps) {
           ))}
         </div>
 
-        <div className="mt-4 pt-3 border-t border-gray-800 flex items-center justify-between text-xs text-gray-500">
-          <span>Volume: ${market.totalVolume.toLocaleString()}</span>
-          <span className="text-green-400 group-hover:translate-x-1 transition-transform">
-            Trade →
+        <div className="mt-4 pt-3 border-t border-gray-800/50 flex items-center justify-between text-xs">
+          <span className="text-gray-500">
+            Volume: <span className="text-cyan-400 font-mono">${market.totalVolume.toLocaleString()}</span>
+          </span>
+          <span className="text-green-400 font-semibold flex items-center gap-1">
+            Trade <span className="group-hover:translate-x-1 transition-transform inline-block">→</span>
           </span>
         </div>
       </div>
