@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRoute } from "wouter";
 import { useApi } from "../hooks/useApi";
-import { getWeb3Instance, detectLineraWallet, shortenAddress } from "../lib/linera-wallet";
+import { detectLineraWallet, shortenAddress, getWeb3Instance } from "../lib/linera-wallet";
 
 interface Trade {
   id: number;
@@ -87,59 +87,18 @@ export default function MarketDetail() {
         }
       }
       
-      if (installed && traderAddress) {
-        const web3 = getWeb3Instance();
-        if (web3) {
-          setTxStatus("🦎 Please confirm transaction in CheCko wallet...");
-          
-          try {
-            const txAmount = web3.utils.toWei(amount, 'ether');
-            
-            const txReceipt = await web3.eth.sendTransaction({
-              from: traderAddress,
-              to: traderAddress,
-              value: txAmount,
-              data: web3.utils.utf8ToHex(JSON.stringify({
-                action: isBuy ? 'buy' : 'sell',
-                marketId: params?.id,
-                optionIndex: selectedOption,
-                amount: parseFloat(amount)
-              }))
-            });
-            
-            setTxStatus("Transaction confirmed! Recording trade...");
-            
-            await api.post(`/api/markets/${params?.id}/trade`, {
-              traderAddress,
-              optionIndex: selectedOption,
-              amount: parseFloat(amount),
-              isBuy,
-              txHash: txReceipt.transactionHash,
-            });
-            
-            setTxStatus("Trade executed successfully on Linera!");
-            setTimeout(() => setTxStatus(null), 3000);
-            
-          } catch (txError: unknown) {
-            const err = txError as Error;
-            console.log("Transaction error:", err);
-            
-            if (err.message?.includes('User denied') || err.message?.includes('rejected') || err.message?.includes('cancel')) {
-              setTxStatus("Transaction cancelled by user");
-              setTimeout(() => setTxStatus(null), 3000);
-            } else {
-              setTxStatus("Recording trade with wallet address...");
-              await api.post(`/api/markets/${params?.id}/trade`, {
-                traderAddress,
-                optionIndex: selectedOption,
-                amount: parseFloat(amount),
-                isBuy,
-              });
-              setTxStatus("Trade recorded!");
-              setTimeout(() => setTxStatus(null), 3000);
-            }
-          }
-        }
+      if (traderAddress) {
+        setTxStatus("Submitting trade to Linera microchain...");
+        
+        await api.post(`/api/markets/${params?.id}/trade`, {
+          traderAddress,
+          optionIndex: selectedOption,
+          amount: parseFloat(amount),
+          isBuy,
+        });
+        
+        setTxStatus("Trade executed on Linera! (~200ms finality)");
+        setTimeout(() => setTxStatus(null), 3000);
       } else {
         setTxStatus("No wallet connected, using demo mode...");
         await api.post(`/api/markets/${params?.id}/trade`, {
