@@ -126,23 +126,23 @@ export default function Header({ isConnected }: HeaderProps) {
 
   return (
     <>
-      <header className="bg-gray-900/90 backdrop-blur-xl border-b border-cyan-500/20 sticky top-0 z-40">
+      <header className="bg-gray-900/95 backdrop-blur-xl border-b border-gray-700/50 sticky top-0 z-40">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <Link href="/">
               <div className="flex items-center gap-3 cursor-pointer group shrink-0">
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center relative overflow-hidden shrink-0"
                      style={{
-                       background: 'linear-gradient(135deg, #00ff88 0%, #00aaff 100%)',
-                       boxShadow: '0 0 20px rgba(0, 255, 136, 0.5), 0 0 40px rgba(0, 255, 136, 0.3)'
+                       background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                       boxShadow: '0 4px 14px rgba(99, 102, 241, 0.4)'
                      }}>
-                  <span className="text-black font-black text-xl">L</span>
+                  <span className="text-white font-black text-xl">L</span>
                 </div>
                 <div className="shrink-0">
-                  <h1 className="text-lg font-bold neon-text-green group-hover:neon-flicker whitespace-nowrap">
+                  <h1 className="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors whitespace-nowrap">
                     Linera Markets
                   </h1>
-                  <p className="text-xs text-cyan-400/70 whitespace-nowrap">AI-Powered Predictions</p>
+                  <p className="text-xs text-gray-400 whitespace-nowrap">AI-Powered Predictions</p>
                 </div>
               </div>
             </Link>
@@ -151,10 +151,10 @@ export default function Header({ isConnected }: HeaderProps) {
               {navItems.map((item) => (
                 <Link key={item.path} href={item.path}>
                   <button
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
                       location === item.path
-                        ? "neon-border-green bg-green-500/10 text-green-400"
-                        : "text-gray-400 hover:text-green-400 hover:bg-green-500/5 border border-transparent"
+                        ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/40"
+                        : "text-gray-400 hover:text-white hover:bg-gray-800/50 border border-transparent"
                     }`}
                   >
                     {item.label}
@@ -166,8 +166,8 @@ export default function Header({ isConnected }: HeaderProps) {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-gray-800/50 border border-gray-700/50">
                 <div className="flex items-center gap-2">
-                  <div className={`w-2.5 h-2.5 rounded-full ${serverOnline ? 'status-online' : 'status-offline'}`} />
-                  <span className={`text-xs font-semibold ${serverOnline ? 'text-green-400' : 'text-red-400'}`}>
+                  <div className={`w-2.5 h-2.5 rounded-full ${serverOnline ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                  <span className={`text-xs font-semibold ${serverOnline ? 'text-emerald-400' : 'text-red-400'}`}>
                     {serverOnline ? 'Live on Linera' : 'Offline'}
                   </span>
                 </div>
@@ -175,26 +175,26 @@ export default function Header({ isConnected }: HeaderProps) {
                   <>
                     <div className="w-px h-4 bg-gray-700" />
                     <div className="flex items-center gap-1.5">
-                      <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                      <span className="text-xs text-cyan-400">WebSocket</span>
+                      <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                      <span className="text-xs text-blue-400">WebSocket</span>
                     </div>
                   </>
                 )}
               </div>
 
-              <div className="px-2 py-1 rounded-lg bg-gray-800/50 border border-purple-500/30">
-                <span className="text-xs font-mono text-purple-400">Testnet</span>
+              <div className="px-2 py-1 rounded-lg bg-gray-800/50 border border-amber-500/30">
+                <span className="text-xs font-mono text-amber-400">Testnet</span>
               </div>
 
               {walletConnected ? (
                 <button
                   onClick={disconnectWallet}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800/80 border border-green-500/30 hover:border-green-500/60 transition-all group"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800/80 border border-indigo-500/30 hover:border-indigo-500/60 transition-all group"
                 >
-                  <div className="w-2 h-2 rounded-full bg-green-400" style={{ boxShadow: '0 0 8px rgba(0, 255, 136, 0.8)' }} />
-                  <span className="text-xs font-mono text-green-400">{shortenAddress(walletAddress, 6)}</span>
+                  <div className="w-2 h-2 rounded-full bg-indigo-400" />
+                  <span className="text-xs font-mono text-indigo-300">{shortenAddress(walletAddress, 6)}</span>
                   {useMockWallet && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
                       Demo
                     </span>
                   )}
@@ -204,7 +204,7 @@ export default function Header({ isConnected }: HeaderProps) {
                 <button
                   onClick={handleConnectClick}
                   disabled={connecting}
-                  className="px-3 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 text-xs font-semibold hover:bg-cyan-500/30 transition-all disabled:opacity-50"
+                  className="px-3 py-1.5 rounded-lg bg-indigo-500/20 border border-indigo-500/50 text-indigo-300 text-xs font-semibold hover:bg-indigo-500/30 transition-all disabled:opacity-50"
                 >
                   {connecting ? 'Connecting...' : 'Connect'}
                 </button>
@@ -216,8 +216,8 @@ export default function Header({ isConnected }: HeaderProps) {
 
       {showWalletModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="bg-gray-900 border border-cyan-500/30 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl"
-               style={{ boxShadow: '0 0 60px rgba(0, 255, 255, 0.1)' }}>
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl"
+               style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-white">Connect Wallet</h2>
               <button 
