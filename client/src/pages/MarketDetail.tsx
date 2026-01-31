@@ -400,6 +400,13 @@ export default function MarketDetail() {
 
           {market.status === "active" && selectedOption !== null && (
             <div className="card bg-gray-800/30">
+              <div className="mb-3 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                <div className="flex items-center gap-2 text-amber-400 text-xs">
+                  <span>🔗</span>
+                  <span className="font-medium">Testnet Demo Mode</span>
+                  <span className="text-amber-300/70">• Trades are recorded. On-chain settlement requires deployed contract.</span>
+                </div>
+              </div>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-medium text-white">Place Trade</h3>
                 <div className="flex items-center gap-3">
@@ -557,9 +564,10 @@ export default function MarketDetail() {
               </div>
             </div>
             
-            <p className="text-xs text-gray-500 mb-4">
-              This transaction will be signed with your CheCko wallet ({shortenAddress(walletAddress || '', 6)})
-            </p>
+            <div className="text-xs text-gray-500 mb-4 space-y-1">
+              <p>Wallet: {shortenAddress(walletAddress || '', 6)} (CheCko)</p>
+              <p className="text-amber-400/80">Demo Mode: Trade will be recorded in database. On-chain settlement available after contract deployment.</p>
+            </div>
             
             <div className="flex gap-3">
               <button
