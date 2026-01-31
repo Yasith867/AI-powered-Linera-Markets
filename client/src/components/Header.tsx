@@ -218,21 +218,39 @@ export default function Header({ isConnected }: HeaderProps) {
             )}
 
             <div className="space-y-3">
-              <a
-                href={CHECKO_INSTALL_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-4 p-4 rounded-xl bg-gray-800/50 border border-gray-700/50 hover:border-green-500/50 transition-all group cursor-pointer"
-              >
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-2xl">
-                  🦎
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-white group-hover:text-green-400 transition-colors">CheCko Wallet</h3>
-                  <p className="text-xs text-gray-400">Install browser extension</p>
-                </div>
-                <span className="text-gray-500 group-hover:text-green-400 transition-colors">→</span>
-              </a>
+              {walletInstalled ? (
+                <button
+                  onClick={connectRealWallet}
+                  disabled={connecting}
+                  className="w-full flex items-center gap-4 p-4 rounded-xl bg-gray-800/50 border border-green-500/50 hover:border-green-400 transition-all group cursor-pointer disabled:opacity-50"
+                  style={{ boxShadow: '0 0 15px rgba(0, 255, 136, 0.2)' }}
+                >
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-2xl">
+                    🦎
+                  </div>
+                  <div className="flex-1 text-left">
+                    <h3 className="font-semibold text-green-400">CheCko Wallet Detected!</h3>
+                    <p className="text-xs text-gray-400">{connecting ? 'Connecting...' : 'Click to connect'}</p>
+                  </div>
+                  <span className="text-green-400">→</span>
+                </button>
+              ) : (
+                <a
+                  href={CHECKO_INSTALL_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-4 p-4 rounded-xl bg-gray-800/50 border border-gray-700/50 hover:border-green-500/50 transition-all group cursor-pointer"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-2xl">
+                    🦎
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-white group-hover:text-green-400 transition-colors">CheCko Wallet</h3>
+                    <p className="text-xs text-gray-400">Install browser extension</p>
+                  </div>
+                  <span className="text-gray-500 group-hover:text-green-400 transition-colors">→</span>
+                </a>
+              )}
 
               <a
                 href={CROISSANT_INSTALL_URL}
@@ -274,18 +292,7 @@ export default function Header({ isConnected }: HeaderProps) {
               </button>
             </div>
 
-            {walletInstalled && (
-              <button
-                onClick={connectRealWallet}
-                disabled={connecting}
-                className="w-full mt-3 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold hover:from-green-400 hover:to-emerald-500 transition-all disabled:opacity-50"
-                style={{ boxShadow: '0 0 20px rgba(0, 255, 136, 0.3)' }}
-              >
-                {connecting ? 'Connecting...' : 'Connect with CheCko Wallet'}
-              </button>
-            )}
-
-            <div className="mt-4 p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20">
+            <div className="mt-4 p-3 rounded-lg bg-green-500/5 border border-green-500/20">
               <p className="text-xs text-yellow-400/80 text-center">
                 ⚠️ {WALLET_STATUS.NOTE}
               </p>
