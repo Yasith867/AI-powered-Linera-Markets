@@ -6,9 +6,18 @@ license.workspace = true
 
 [dependencies]
 linera-sdk.workspace = true
+async-graphql.workspace = true
 serde.workspace = true
 async-trait.workspace = true
 thiserror.workspace = true
 
+[[bin]]
+name = "prediction-market-contract"
+path = "src/contract.rs"
+
+[[bin]]
+name = "prediction-market-service"
+path = "src/service.rs"
+
 [lib]
-crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"

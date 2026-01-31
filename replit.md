@@ -89,19 +89,77 @@ npm run build        # Build for production
 - Neon/cyberpunk UI theme with glowing effects
 - Real-time server status indicator
 
+## Smart Contract Deployment
+
+### Deploy to Testnet Conway
+
+```bash
+# 1. Install Linera CLI
+curl -sSL https://get.linera.io | sh
+
+# 2. Add WASM target
+rustup target add wasm32-unknown-unknown
+
+# 3. Run deployment script
+cd contracts && ./deploy.sh
+```
+
+### Manual Deployment
+
+```bash
+# Initialize wallet
+linera wallet init --faucet https://faucet.testnet-conway.linera.net
+linera wallet request-chain --faucet https://faucet.testnet-conway.linera.net
+
+# Build contracts
+cd contracts/market
+cargo build --release --target wasm32-unknown-unknown
+
+# Deploy
+linera publish-and-create \
+  ../target/wasm32-unknown-unknown/release/prediction_market_contract.wasm \
+  ../target/wasm32-unknown-unknown/release/prediction_market_service.wasm \
+  --json-argument '{"admin": null, "oracle_threshold": 67}'
+```
+
+### Update Application ID
+
+After deployment, update `client/src/lib/linera-config.ts`:
+```typescript
+PREDICTION_MARKET_APP_ID: 'your-deployed-app-id-here',
+```
+
 ## Wallet Integration
 
 ### CheCko Wallet (by ResPeer)
 - Browser extension wallet for Linera blockchain
-- Uses Web3.js API: `const web3 = new Web3(window.linera)`
-- Standard `web3.eth.requestAccounts()` for connection
+- Uses `linera_graphqlMutation` RPC for real on-chain transactions
 - Install from: https://github.com/respeer-ai/linera-wallet/releases
 
-### Integration Pattern
+### RPC Methods Used
+- `eth_requestAccounts` - Connect wallet, get public key
+- `linera_graphqlMutation` - Send transactions via GraphQL
+- `linera_graphqlQuery` - Query application state
+
+### Transaction Flow
 ```typescript
-import Web3 from 'web3';
+// 1. Connect wallet
 const web3 = new Web3(window.linera);
 const accounts = await web3.eth.requestAccounts();
+
+// 2. Send transaction via GraphQL mutation
+const result = await window.linera.request({
+  method: 'linera_graphqlMutation',
+  params: {
+    publicKey: accounts[0],
+    applicationId: 'your-app-id',
+    query: {
+      query: 'mutation PlaceTrade(...) { ... }',
+      variables: { marketId: 1, optionIndex: 0, amount: 100 }
+    },
+    operationName: 'PlaceTrade'
+  }
+});
 ```
 
 ### Demo Mode
