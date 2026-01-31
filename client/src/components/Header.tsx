@@ -130,19 +130,19 @@ export default function Header({ isConnected }: HeaderProps) {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <Link href="/">
-              <div className="flex items-center gap-3 cursor-pointer group">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center relative overflow-hidden"
+              <div className="flex items-center gap-3 cursor-pointer group shrink-0">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center relative overflow-hidden shrink-0"
                      style={{
                        background: 'linear-gradient(135deg, #00ff88 0%, #00aaff 100%)',
                        boxShadow: '0 0 20px rgba(0, 255, 136, 0.5), 0 0 40px rgba(0, 255, 136, 0.3)'
                      }}>
                   <span className="text-black font-black text-xl">L</span>
                 </div>
-                <div>
-                  <h1 className="text-lg font-bold neon-text-green group-hover:neon-flicker">
+                <div className="shrink-0">
+                  <h1 className="text-lg font-bold neon-text-green group-hover:neon-flicker whitespace-nowrap">
                     Linera Markets
                   </h1>
-                  <p className="text-xs text-cyan-400/70">AI-Powered Predictions</p>
+                  <p className="text-xs text-cyan-400/70 whitespace-nowrap">AI-Powered Predictions</p>
                 </div>
               </div>
             </Link>
