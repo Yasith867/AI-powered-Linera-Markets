@@ -176,43 +176,25 @@ export default function MarketDetail() {
           
           setTimeout(() => setTxStatus("Trade executed on Linera! (~200ms finality)"), 1500);
           setTimeout(() => setTxStatus(null), 5000);
-        } else if (mutationResult.error?.includes('rejected')) {
+        } else if (mutationResult.error?.includes('rejected') || mutationResult.error?.includes('denied') || mutationResult.error?.includes('cancel')) {
           setTxStatus("Transaction cancelled by user");
           setTimeout(() => setTxStatus(null), 3000);
+          setTrading(false);
+          return;
         } else {
-          setTxStatus(`Error: ${mutationResult.error || 'Unknown error'}. Falling back...`);
-          
-          await api.post(`/api/markets/${params?.id}/trade`, {
-            traderAddress,
-            optionIndex: selectedOption,
-            amount: parseFloat(amount),
-            isBuy,
-          });
-          setTimeout(() => setTxStatus("Trade recorded (wallet mutation unavailable)"), 1000);
-          setTimeout(() => setTxStatus(null), 4000);
+          setBalanceError(`Wallet error: ${mutationResult.error || 'Transaction failed'}. Please try again or check wallet connection.`);
+          setTxStatus(null);
+          setTrading(false);
+          return;
         }
-      } else if (traderAddress) {
-        setTxStatus("Submitting trade to Linera microchain...");
-        
-        await api.post(`/api/markets/${params?.id}/trade`, {
-          traderAddress,
-          optionIndex: selectedOption,
-          amount: parseFloat(amount),
-          isBuy,
-        });
-        
-        setTxStatus("Trade executed on Linera! (~200ms finality)");
-        setTimeout(() => setTxStatus(null), 3000);
+      } else if (!installed) {
+        setBalanceError("Please install CheCko wallet to trade. Visit: github.com/respeer-ai/linera-wallet/releases");
+        setTrading(false);
+        return;
       } else {
-        setTxStatus("No wallet connected, using demo mode...");
-        await api.post(`/api/markets/${params?.id}/trade`, {
-          traderAddress: `demo_${Math.random().toString(36).slice(2, 8)}`,
-          optionIndex: selectedOption,
-          amount: parseFloat(amount),
-          isBuy,
-        });
-        setTxStatus("Demo trade executed!");
-        setTimeout(() => setTxStatus(null), 3000);
+        setBalanceError("Please connect your CheCko wallet first using the Connect button");
+        setTrading(false);
+        return;
       }
       
       await fetchMarket();

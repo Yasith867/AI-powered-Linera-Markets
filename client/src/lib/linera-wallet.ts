@@ -136,6 +136,30 @@ export function isWalletConnected(): boolean {
   return !!connectedAccount && !!web3Instance;
 }
 
+export async function restoreWalletConnection(): Promise<boolean> {
+  if (!window.linera) {
+    return false;
+  }
+  
+  try {
+    const web3 = getWeb3Instance();
+    if (!web3) return false;
+    
+    const accounts = await web3.eth.getAccounts();
+    if (accounts && accounts.length > 0) {
+      connectedAccount = {
+        publicKey: accounts[0],
+        chainId: accounts[0]
+      };
+      return true;
+    }
+    return false;
+  } catch (err) {
+    console.log('Failed to restore wallet connection:', err);
+    return false;
+  }
+}
+
 export async function getWalletBalance(): Promise<WalletBalance> {
   if (!window.linera) {
     return { balance: '0', formatted: 0, hasBalance: false, lastUpdated: Date.now() };
@@ -255,11 +279,14 @@ export async function lineraGraphqlMutation(
   applicationOperationBytes?: number[]
 ): Promise<{ success: boolean; operationId?: string; error?: string }> {
   if (!window.linera) {
-    return { success: false, error: 'Wallet not connected' };
+    return { success: false, error: 'CheCko wallet not detected. Please install it.' };
   }
   
   if (!connectedAccount) {
-    return { success: false, error: 'Please connect wallet first' };
+    const restored = await restoreWalletConnection();
+    if (!restored) {
+      return { success: false, error: 'Please connect your wallet first using the Connect button' };
+    }
   }
   
   try {
@@ -273,7 +300,7 @@ export async function lineraGraphqlMutation(
       };
       operationName: string;
     } = {
-      publicKey: connectedAccount.publicKey,
+      publicKey: connectedAccount!.publicKey,
       query: {
         query,
         variables
@@ -321,11 +348,14 @@ export async function lineraGraphqlQuery(
   variables: Record<string, unknown> = {}
 ): Promise<{ success: boolean; data?: unknown; error?: string }> {
   if (!window.linera) {
-    return { success: false, error: 'Wallet not connected' };
+    return { success: false, error: 'CheCko wallet not detected' };
   }
   
   if (!connectedAccount) {
-    return { success: false, error: 'Please connect wallet first' };
+    const restored = await restoreWalletConnection();
+    if (!restored) {
+      return { success: false, error: 'Please connect your wallet first' };
+    }
   }
   
   try {
@@ -338,7 +368,7 @@ export async function lineraGraphqlQuery(
       };
       operationName: string;
     } = {
-      publicKey: connectedAccount.publicKey,
+      publicKey: connectedAccount!.publicKey,
       query: {
         query,
         variables
