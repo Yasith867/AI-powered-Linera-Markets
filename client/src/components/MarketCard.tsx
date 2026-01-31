@@ -8,6 +8,7 @@ interface Market {
   odds: number[];
   totalVolume: number;
   status: string;
+  eventTime?: string;
 }
 
 interface MarketCardProps {
@@ -23,8 +24,24 @@ const categoryColors: Record<string, string> = {
   general: "from-gray-500/20 to-slate-500/20 text-gray-400 border-gray-500/30",
 };
 
+function formatResolutionDate(dateStr?: string): string {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = date.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffDays < 0) return "Ended";
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Tomorrow";
+  if (diffDays < 7) return `${diffDays} days`;
+  if (diffDays < 30) return `${Math.ceil(diffDays / 7)} weeks`;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" });
+}
+
 export default function MarketCard({ market }: MarketCardProps) {
   const categoryClass = categoryColors[market.category] || categoryColors.general;
+  const resolutionLabel = formatResolutionDate(market.eventTime);
 
   return (
     <Link href={`/markets/${market.id}`}>
@@ -76,9 +93,16 @@ export default function MarketCard({ market }: MarketCardProps) {
         </div>
 
         <div className="mt-4 pt-3 border-t border-gray-800/50 flex items-center justify-between text-xs">
-          <span className="text-gray-500">
-            Volume: <span className="text-cyan-400 font-mono">${market.totalVolume.toLocaleString()}</span>
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-gray-500">
+              Volume: <span className="text-cyan-400 font-mono">${market.totalVolume.toLocaleString()}</span>
+            </span>
+            {resolutionLabel && (
+              <span className="text-gray-500">
+                Resolves: <span className="text-yellow-400">{resolutionLabel}</span>
+              </span>
+            )}
+          </div>
           <span className="text-green-400 font-semibold flex items-center gap-1">
             Trade <span className="group-hover:translate-x-1 transition-transform inline-block">→</span>
           </span>

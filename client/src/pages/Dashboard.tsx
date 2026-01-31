@@ -89,7 +89,7 @@ export default function Dashboard() {
         description: customMarket.description || `Custom prediction market: ${customMarket.title}`,
         category: customMarket.category,
         options: customMarket.options.filter(o => o.trim()),
-        resolutionDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        eventTime: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       });
       setShowCustomModal(false);
       setCustomMarket({ title: "", description: "", category: "general", options: ["Yes", "No"] });
