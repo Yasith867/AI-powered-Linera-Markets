@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRoute } from "wouter";
 import { useApi } from "../hooks/useApi";
+import { getWeb3Instance, detectLineraWallet, shortenAddress } from "../lib/linera-wallet";
 
 interface Trade {
   id: number;
@@ -31,13 +32,33 @@ export default function MarketDetail() {
   const [trading, setTrading] = useState(false);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [amount, setAmount] = useState("");
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [txStatus, setTxStatus] = useState<string | null>(null);
   const api = useApi();
 
   useEffect(() => {
     if (params?.id) {
       fetchMarket();
     }
+    checkWalletConnection();
   }, [params?.id]);
+
+  const checkWalletConnection = async () => {
+    const { installed } = detectLineraWallet();
+    if (installed) {
+      const web3 = getWeb3Instance();
+      if (web3) {
+        try {
+          const accounts = await web3.eth.getAccounts();
+          if (accounts.length > 0) {
+            setWalletAddress(accounts[0]);
+          }
+        } catch {
+          // Wallet not connected yet
+        }
+      }
+    }
+  };
 
   const fetchMarket = async () => {
     const data = await api.get(`/api/markets/${params?.id}`);
@@ -46,17 +67,96 @@ export default function MarketDetail() {
 
   const executeTrade = async (isBuy: boolean) => {
     if (selectedOption === null || !amount) return;
+    
     setTrading(true);
+    setTxStatus(null);
+    
     try {
-      await api.post(`/api/markets/${params?.id}/trade`, {
-        traderAddress: `user_${Math.random().toString(36).slice(2, 8)}`,
-        optionIndex: selectedOption,
-        amount: parseFloat(amount),
-        isBuy,
-      });
+      const { installed } = detectLineraWallet();
+      let traderAddress = walletAddress;
+      
+      if (installed && !walletAddress) {
+        const web3 = getWeb3Instance();
+        if (web3) {
+          setTxStatus("Requesting wallet connection...");
+          const accounts = await web3.eth.requestAccounts();
+          if (accounts.length > 0) {
+            traderAddress = accounts[0];
+            setWalletAddress(accounts[0]);
+          }
+        }
+      }
+      
+      if (installed && traderAddress) {
+        const web3 = getWeb3Instance();
+        if (web3) {
+          setTxStatus("Please confirm transaction in CheCko wallet...");
+          
+          try {
+            const txData = {
+              marketId: params?.id,
+              optionIndex: selectedOption,
+              amount: parseFloat(amount),
+              isBuy,
+              timestamp: Date.now()
+            };
+            
+            const message = JSON.stringify(txData);
+            const signature = await web3.eth.personal.sign(
+              message,
+              traderAddress,
+              ''
+            );
+            
+            setTxStatus("Transaction signed! Submitting to Linera...");
+            
+            await api.post(`/api/markets/${params?.id}/trade`, {
+              traderAddress,
+              optionIndex: selectedOption,
+              amount: parseFloat(amount),
+              isBuy,
+              signature,
+            });
+            
+            setTxStatus("Trade executed successfully!");
+            setTimeout(() => setTxStatus(null), 3000);
+            
+          } catch (signError: unknown) {
+            const err = signError as Error;
+            if (err.message?.includes('User denied') || err.message?.includes('rejected')) {
+              setTxStatus("Transaction cancelled by user");
+            } else {
+              setTxStatus("Wallet signing failed, using direct trade...");
+              await api.post(`/api/markets/${params?.id}/trade`, {
+                traderAddress,
+                optionIndex: selectedOption,
+                amount: parseFloat(amount),
+                isBuy,
+              });
+              setTxStatus("Trade executed!");
+            }
+            setTimeout(() => setTxStatus(null), 3000);
+          }
+        }
+      } else {
+        setTxStatus("No wallet connected, using demo mode...");
+        await api.post(`/api/markets/${params?.id}/trade`, {
+          traderAddress: `demo_${Math.random().toString(36).slice(2, 8)}`,
+          optionIndex: selectedOption,
+          amount: parseFloat(amount),
+          isBuy,
+        });
+        setTxStatus("Demo trade executed!");
+        setTimeout(() => setTxStatus(null), 3000);
+      }
+      
       await fetchMarket();
       setAmount("");
       setSelectedOption(null);
+    } catch (error) {
+      console.error("Trade failed:", error);
+      setTxStatus("Trade failed. Please try again.");
+      setTimeout(() => setTxStatus(null), 3000);
     } finally {
       setTrading(false);
     }
@@ -156,7 +256,30 @@ export default function MarketDetail() {
 
           {market.status === "active" && selectedOption !== null && (
             <div className="card bg-gray-800/30">
-              <h3 className="font-medium text-white mb-3">Place Trade</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-white">Place Trade</h3>
+                {walletAddress && (
+                  <span className="text-xs text-green-400 font-mono bg-green-500/10 px-2 py-1 rounded">
+                    {shortenAddress(walletAddress, 6)}
+                  </span>
+                )}
+              </div>
+              
+              {txStatus && (
+                <div className={`mb-3 p-3 rounded-lg text-sm ${
+                  txStatus.includes('confirm') || txStatus.includes('Requesting') 
+                    ? 'bg-yellow-500/10 border border-yellow-500/30 text-yellow-400'
+                    : txStatus.includes('success') || txStatus.includes('executed')
+                    ? 'bg-green-500/10 border border-green-500/30 text-green-400'
+                    : txStatus.includes('cancelled') || txStatus.includes('failed')
+                    ? 'bg-red-500/10 border border-red-500/30 text-red-400'
+                    : 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-400'
+                }`}>
+                  {txStatus.includes('confirm') && '🦎 '}
+                  {txStatus}
+                </div>
+              )}
+              
               <div className="flex gap-3">
                 <input
                   type="number"
@@ -164,6 +287,7 @@ export default function MarketDetail() {
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="Amount"
                   className="input flex-1"
+                  disabled={trading}
                 />
                 <button
                   onClick={() => executeTrade(true)}
