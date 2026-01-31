@@ -35,6 +35,14 @@ export default function Dashboard() {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [lineraStats, setLineraStats] = useState<LineraStats | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [showCustomModal, setShowCustomModal] = useState(false);
+  const [customMarket, setCustomMarket] = useState({
+    title: "",
+    description: "",
+    category: "general",
+    options: ["Yes", "No"],
+  });
+  const [creatingCustom, setCreatingCustom] = useState(false);
   const api = useApi();
 
   useEffect(() => {
@@ -72,6 +80,44 @@ export default function Dashboard() {
     }
   };
 
+  const createCustomMarket = async () => {
+    if (!customMarket.title.trim()) return;
+    setCreatingCustom(true);
+    try {
+      await api.post("/api/markets", {
+        title: customMarket.title,
+        description: customMarket.description || `Custom prediction market: ${customMarket.title}`,
+        category: customMarket.category,
+        options: customMarket.options.filter(o => o.trim()),
+        resolutionDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      });
+      setShowCustomModal(false);
+      setCustomMarket({ title: "", description: "", category: "general", options: ["Yes", "No"] });
+      await fetchData();
+    } finally {
+      setCreatingCustom(false);
+    }
+  };
+
+  const updateOption = (index: number, value: string) => {
+    const newOptions = [...customMarket.options];
+    newOptions[index] = value;
+    setCustomMarket({ ...customMarket, options: newOptions });
+  };
+
+  const addOption = () => {
+    if (customMarket.options.length < 6) {
+      setCustomMarket({ ...customMarket, options: [...customMarket.options, ""] });
+    }
+  };
+
+  const removeOption = (index: number) => {
+    if (customMarket.options.length > 2) {
+      const newOptions = customMarket.options.filter((_, i) => i !== index);
+      setCustomMarket({ ...customMarket, options: newOptions });
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -79,7 +125,14 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold text-white">Dashboard</h1>
           <p className="text-gray-400 mt-1">Real-time prediction market infrastructure</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setShowCustomModal(true)}
+            className="btn-secondary flex items-center gap-2"
+          >
+            <span>+</span>
+            Custom Market
+          </button>
           {["crypto", "sports", "technology"].map((cat) => (
             <button
               key={cat}
@@ -231,6 +284,126 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {showCustomModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="card max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white">Create Custom Market</h2>
+              <button
+                onClick={() => setShowCustomModal(false)}
+                className="text-gray-400 hover:text-white text-2xl"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Market Question *
+                </label>
+                <input
+                  type="text"
+                  value={customMarket.title}
+                  onChange={(e) => setCustomMarket({ ...customMarket, title: e.target.value })}
+                  placeholder="Will Bitcoin reach $100,000 by March 2024?"
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Description (optional)
+                </label>
+                <textarea
+                  value={customMarket.description}
+                  onChange={(e) => setCustomMarket({ ...customMarket, description: e.target.value })}
+                  placeholder="Add more details about how this market will be resolved..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:outline-none resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Category
+                </label>
+                <select
+                  value={customMarket.category}
+                  onChange={(e) => setCustomMarket({ ...customMarket, category: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-green-500 focus:outline-none"
+                >
+                  <option value="general">General</option>
+                  <option value="crypto">Crypto</option>
+                  <option value="sports">Sports</option>
+                  <option value="technology">Technology</option>
+                  <option value="politics">Politics</option>
+                  <option value="entertainment">Entertainment</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Options (2-6)
+                </label>
+                <div className="space-y-2">
+                  {customMarket.options.map((option, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={option}
+                        onChange={(e) => updateOption(index, e.target.value)}
+                        placeholder={`Option ${index + 1}`}
+                        className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:outline-none"
+                      />
+                      {customMarket.options.length > 2 && (
+                        <button
+                          onClick={() => removeOption(index)}
+                          className="px-3 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"
+                        >
+                          &times;
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  {customMarket.options.length < 6 && (
+                    <button
+                      onClick={addOption}
+                      className="w-full px-4 py-2 border border-dashed border-gray-600 rounded-lg text-gray-400 hover:border-green-500 hover:text-green-400"
+                    >
+                      + Add Option
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowCustomModal(false)}
+                className="flex-1 px-4 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={createCustomMarket}
+                disabled={!customMarket.title.trim() || creatingCustom}
+                className="flex-1 px-4 py-3 bg-green-500 text-black font-bold rounded-lg hover:bg-green-400 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {creatingCustom ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Market"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
