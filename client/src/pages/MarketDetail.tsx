@@ -12,6 +12,7 @@ import {
   getWalletBalance,
   checkSufficientBalance,
   clearBalanceCache,
+  restoreWalletConnection,
   PREDICTION_MARKET_APP_ID
 } from "../lib/linera-wallet";
 
@@ -59,25 +60,32 @@ export default function MarketDetail() {
   }, [params?.id]);
 
   const checkWalletConnection = async () => {
-    const account = getConnectedAccount();
+    const { installed } = detectLineraWallet();
+    if (!installed) return;
+    
+    let account = getConnectedAccount();
+    if (!account) {
+      const restored = await restoreWalletConnection();
+      if (restored) {
+        account = getConnectedAccount();
+      }
+    }
+    
     if (account) {
       setWalletAddress(account.publicKey);
       const balance = await getWalletBalance();
       setWalletBalance(balance.formatted);
     } else {
-      const { installed } = detectLineraWallet();
-      if (installed) {
-        const web3 = getWeb3Instance();
-        if (web3) {
-          try {
-            const accounts = await web3.eth.getAccounts();
-            if (accounts.length > 0) {
-              setWalletAddress(accounts[0]);
-              const balance = await getWalletBalance();
-              setWalletBalance(balance.formatted);
-            }
-          } catch {
+      const web3 = getWeb3Instance();
+      if (web3) {
+        try {
+          const accounts = await web3.eth.getAccounts();
+          if (accounts.length > 0) {
+            setWalletAddress(accounts[0]);
+            const balance = await getWalletBalance();
+            setWalletBalance(balance.formatted);
           }
+        } catch {
         }
       }
     }
