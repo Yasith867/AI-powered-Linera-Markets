@@ -34,9 +34,25 @@ export default function Header({ isConnected }: HeaderProps) {
   }, []);
 
   useEffect(() => {
+    const checkWallet = () => {
+      const { installed } = detectLineraWallet();
+      setWalletInstalled(installed);
+    };
+    
+    checkWallet();
+    const interval = setInterval(checkWallet, 1000);
+    setTimeout(() => clearInterval(interval), 10000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  const refreshWalletDetection = () => {
     const { installed } = detectLineraWallet();
     setWalletInstalled(installed);
-  }, []);
+    if (!installed) {
+      setWalletError("CheCko wallet not detected. Make sure the extension is enabled for this site.");
+    }
+  };
 
   const checkServerStatus = async () => {
     try {
@@ -235,21 +251,29 @@ export default function Header({ isConnected }: HeaderProps) {
                   <span className="text-green-400">→</span>
                 </button>
               ) : (
-                <a
-                  href={CHECKO_INSTALL_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-4 p-4 rounded-xl bg-gray-800/50 border border-gray-700/50 hover:border-green-500/50 transition-all group cursor-pointer"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-2xl">
-                    🦎
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-white group-hover:text-green-400 transition-colors">CheCko Wallet</h3>
-                    <p className="text-xs text-gray-400">Install browser extension</p>
-                  </div>
-                  <span className="text-gray-500 group-hover:text-green-400 transition-colors">→</span>
-                </a>
+                <div className="space-y-2">
+                  <button
+                    onClick={refreshWalletDetection}
+                    className="w-full flex items-center gap-4 p-4 rounded-xl bg-gray-800/50 border border-green-500/30 hover:border-green-500/50 transition-all group cursor-pointer"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-2xl">
+                      🦎
+                    </div>
+                    <div className="flex-1 text-left">
+                      <h3 className="font-semibold text-white group-hover:text-green-400 transition-colors">CheCko Wallet</h3>
+                      <p className="text-xs text-gray-400">Click to detect installed wallet</p>
+                    </div>
+                    <span className="text-gray-500 group-hover:text-green-400 transition-colors">🔄</span>
+                  </button>
+                  <a
+                    href={CHECKO_INSTALL_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-center text-xs text-gray-500 hover:text-green-400 transition-colors"
+                  >
+                    Don't have CheCko? Download here →
+                  </a>
+                </div>
               )}
 
               <a
