@@ -12,12 +12,20 @@ interface Bot {
   lineraChainId: string | null;
 }
 
+interface ExecutionResult {
+  botId: number;
+  success: boolean;
+  trades: number;
+  message?: string;
+}
+
 export default function Bots() {
   const [bots, setBots] = useState<Bot[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [executing, setExecuting] = useState<number | null>(null);
   const [form, setForm] = useState({ name: "", strategy: "momentum" });
+  const [lastExecution, setLastExecution] = useState<ExecutionResult | null>(null);
   const api = useApi();
 
   useEffect(() => {
@@ -48,11 +56,31 @@ export default function Bots() {
 
   const executeBot = async (botId: number) => {
     setExecuting(botId);
+    setLastExecution(null);
     try {
-      await api.post(`/api/bots/${botId}/execute`, {});
+      const result = await api.post(`/api/bots/${botId}/execute`, {});
+      if (result) {
+        const trades = (result as { trades: unknown[] }).trades?.length || 0;
+        setLastExecution({
+          botId,
+          success: true,
+          trades,
+          message: trades > 0 
+            ? `Executed ${trades} trade(s) successfully!` 
+            : "No trading opportunities found in current market conditions."
+        });
+      }
       await fetchBots();
+    } catch {
+      setLastExecution({
+        botId,
+        success: false,
+        trades: 0,
+        message: "Execution failed. Bot may be inactive or no markets available."
+      });
     } finally {
       setExecuting(null);
+      setTimeout(() => setLastExecution(null), 5000);
     }
   };
 
@@ -218,6 +246,63 @@ export default function Bots() {
           </button>
         </div>
       )}
+
+      {/* Execution Notification */}
+      {lastExecution && (
+        <div className={`fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-sm ${
+          lastExecution.success 
+            ? "bg-green-900/90 border border-green-500/50" 
+            : "bg-red-900/90 border border-red-500/50"
+        }`}>
+          <div className="flex items-start gap-3">
+            <span className="text-xl">
+              {lastExecution.success ? "✓" : "✗"}
+            </span>
+            <div>
+              <p className={`font-medium ${lastExecution.success ? "text-green-400" : "text-red-400"}`}>
+                Bot Execution
+              </p>
+              <p className="text-sm text-gray-300 mt-1">
+                {lastExecution.message}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Strategy Info Section */}
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="card border-blue-800/50">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-2xl">📈</span>
+            <h3 className="font-semibold text-white">Momentum Strategy</h3>
+          </div>
+          <p className="text-sm text-gray-400">
+            Follows market trends. Buys options when odds are rising above 60%. 
+            Works best in trending markets.
+          </p>
+        </div>
+        <div className="card border-purple-800/50">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-2xl">🔄</span>
+            <h3 className="font-semibold text-white">Contrarian Strategy</h3>
+          </div>
+          <p className="text-sm text-gray-400">
+            Bets against the crowd. Buys undervalued options below 30% odds.
+            Profits from market overreactions.
+          </p>
+        </div>
+        <div className="card border-amber-800/50">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-2xl">⚖️</span>
+            <h3 className="font-semibold text-white">Arbitrage Strategy</h3>
+          </div>
+          <p className="text-sm text-gray-400">
+            Exploits pricing inefficiencies. Buys when total implied probability
+            falls below 95%. Low risk, consistent returns.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
