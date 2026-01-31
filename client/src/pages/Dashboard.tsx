@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { useApi } from "../hooks/useApi";
 import StatsCard from "../components/StatsCard";
-import MarketCard from "../components/MarketCard";
 
 interface Analytics {
   markets: { total: number; active: number; resolved: number; totalVolume: number };
@@ -20,19 +19,8 @@ interface LineraStats {
   network: string;
 }
 
-interface Market {
-  id: number;
-  title: string;
-  category: string;
-  options: string[];
-  odds: number[];
-  totalVolume: number;
-  status: string;
-}
-
 export default function Dashboard() {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
-  const [markets, setMarkets] = useState<Market[]>([]);
   const [lineraStats, setLineraStats] = useState<LineraStats | null>(null);
   const [generating, setGenerating] = useState(false);
   const [showCustomModal, setShowCustomModal] = useState(false);
@@ -67,12 +55,8 @@ export default function Dashboard() {
   };
 
   const fetchData = async () => {
-    const [analyticsData, marketsData] = await Promise.all([
-      fetch("/api/analytics/overview").then((r) => r.json()),
-      fetch("/api/markets").then((r) => r.json()),
-    ]);
+    const analyticsData = await fetch("/api/analytics/overview").then((r) => r.json());
     setAnalytics(analyticsData);
-    setMarkets(marketsData.slice(0, 6));
     await fetchLineraStats();
   };
 
@@ -122,11 +106,6 @@ export default function Dashboard() {
       const newOptions = customMarket.options.filter((_, i) => i !== index);
       setCustomMarket({ ...customMarket, options: newOptions });
     }
-  };
-
-  const deleteMarket = async (id: number) => {
-    await api.del(`/api/markets/${id}`);
-    setMarkets(markets.filter(m => m.id !== id));
   };
 
   return (
@@ -193,26 +172,7 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-white">Active Markets</h2>
-            <Link href="/markets">
-              <button className="text-green-400 hover:text-green-300 text-sm">View all →</button>
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {markets.filter(m => m.status === "active").slice(0, 4).map((market) => (
-              <MarketCard key={market.id} market={market} onDelete={deleteMarket} />
-            ))}
-            {markets.filter(m => m.status === "active").length === 0 && (
-              <div className="col-span-2 text-center py-8 text-gray-400">
-                No active markets. Create one using the buttons above!
-              </div>
-            )}
-          </div>
-        </div>
-
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
           <h2 className="text-xl font-semibold text-white mb-4">Quick Actions</h2>
           <div className="card space-y-3">
