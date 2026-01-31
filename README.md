@@ -14,6 +14,17 @@ This project demonstrates the full potential of Linera's real-time blockchain ca
 - **Trading Bot Framework** - Customizable automated trading strategies
 - **Cross-Chain Messaging** - Seamless coordination between microchains
 
+## 🟢 Live Right Now
+
+| Feature | Description |
+|---------|-------------|
+| **PostgreSQL Database** | All markets, trades, and data persist permanently |
+| **OpenAI GPT-5.2** | Real AI generates markets based on current events |
+| **WebSocket Updates** | Changes broadcast to all users instantly |
+| **AMM Pricing** | Constant product formula calculates real odds |
+| **Oracle Network** | 67% weighted consensus for fair resolution |
+| **Trading Bots** | Momentum, Contrarian, Arbitrage strategies |
+
 ## ⚡ Key Features
 
 ### 1. AI-Powered Market Creation

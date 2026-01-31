@@ -157,22 +157,7 @@ export default function Demo() {
 
       {activeTab === "live" && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="card">
-              <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
-                Live Right Now
-              </h4>
-              <div className="space-y-3">
-                <LiveFeature icon="🗄️" title="PostgreSQL Database" desc="All markets, trades, and data persist permanently" />
-                <LiveFeature icon="🤖" title="OpenAI GPT-5.2" desc="Real AI generates markets based on current events" />
-                <LiveFeature icon="📡" title="WebSocket Updates" desc="Changes broadcast to all users instantly" />
-                <LiveFeature icon="📊" title="AMM Pricing" desc="Constant product formula calculates real odds" />
-                <LiveFeature icon="🔮" title="Oracle Network" desc="67% weighted consensus for fair resolution" />
-                <LiveFeature icon="⚡" title="Trading Bots" desc="Momentum, Contrarian, Arbitrage strategies" />
-              </div>
-            </div>
-
+          <div className="grid grid-cols-1 gap-6">
             <div className="card">
               <h4 className="text-lg font-bold text-white mb-4">Try These Actions</h4>
               <div className="space-y-3">
