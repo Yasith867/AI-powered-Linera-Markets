@@ -42,8 +42,8 @@ export default function App() {
 
       <main className="container mx-auto px-4 py-6">
         <Switch>
+          <Route path="/overview" component={Demo} />
           <Route path="/" component={Dashboard} />
-          <Route path="/demo" component={Demo} />
           <Route path="/markets" component={Markets} />
           <Route path="/markets/:id" component={MarketDetail} />
           <Route path="/oracles" component={Oracles} />
