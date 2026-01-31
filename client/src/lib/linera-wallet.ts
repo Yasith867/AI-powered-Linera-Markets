@@ -1,4 +1,5 @@
 import Web3 from 'web3';
+import { LINERA_CONFIG } from './linera-config';
 
 declare global {
   interface Window {
@@ -267,7 +268,7 @@ export function shortenAddress(address: string, chars = 6): string {
   return `${address.slice(0, chars)}...${address.slice(-chars)}`;
 }
 
-export const PREDICTION_MARKET_APP_ID = 'e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65010000000000000000000000e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65030000000000000000000000';
+export const PREDICTION_MARKET_APP_ID = LINERA_CONFIG.getAppId();
 
 export async function placeTrade(
   marketId: number, 

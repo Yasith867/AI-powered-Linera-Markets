@@ -72,7 +72,7 @@ linera publish-and-create \
 
 ### Step 4: Get Application ID
 The `publish-and-create` command outputs the application ID. Copy this and update:
-- `client/src/lib/linera-wallet.ts` - `PREDICTION_MARKET_APP_ID`
+- `client/src/lib/linera-config.ts` - `PREDICTION_MARKET_APP_ID`
 
 ### Step 5: Start Node Service
 ```bash
