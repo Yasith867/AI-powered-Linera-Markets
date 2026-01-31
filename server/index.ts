@@ -9,6 +9,9 @@ import { aiRoutes, setBroadcast as setAiBroadcast } from "./routes/ai";
 import { analyticsRoutes } from "./routes/analytics";
 import { lineraRoutes } from "./routes/linera";
 import * as lineraClient from "./linera/client";
+import { db } from "./db";
+import { markets } from "../shared/schema";
+import { eq, lt, and, isNotNull } from "drizzle-orm";
 
 const app = express();
 const server = createServer(app);
@@ -63,7 +66,46 @@ app.get("/api/linera-stats", (_, res) => {
   res.json(lineraClient.getLineraStats());
 });
 
+async function checkExpiredMarkets() {
+  try {
+    const now = new Date();
+    const expiredMarkets = await db
+      .select()
+      .from(markets)
+      .where(
+        and(
+          eq(markets.status, "active"),
+          isNotNull(markets.eventTime),
+          lt(markets.eventTime, now)
+        )
+      );
+
+    for (const market of expiredMarkets) {
+      const highestOddsIndex = market.odds.indexOf(Math.max(...market.odds));
+      await db
+        .update(markets)
+        .set({
+          status: "resolved",
+          resolvedOutcome: highestOddsIndex,
+          resolvedAt: now,
+        })
+        .where(eq(markets.id, market.id));
+
+      console.log(`Auto-resolved market ${market.id}: ${market.title}`);
+      broadcast({
+        type: "market_resolved",
+        data: { marketId: market.id, outcome: highestOddsIndex },
+      });
+    }
+  } catch (error) {
+    console.error("Error checking expired markets:", error);
+  }
+}
+
+setInterval(checkExpiredMarkets, 10000);
+
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  checkExpiredMarkets();
 });

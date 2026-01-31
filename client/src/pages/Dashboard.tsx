@@ -36,11 +36,17 @@ export default function Dashboard() {
   const [lineraStats, setLineraStats] = useState<LineraStats | null>(null);
   const [generating, setGenerating] = useState(false);
   const [showCustomModal, setShowCustomModal] = useState(false);
+  const getDefaultDateTime = () => {
+    const date = new Date();
+    date.setDate(date.getDate() + 7);
+    return date.toISOString().slice(0, 16);
+  };
   const [customMarket, setCustomMarket] = useState({
     title: "",
     description: "",
     category: "general",
     options: ["Yes", "No"],
+    eventDateTime: getDefaultDateTime(),
   });
   const [creatingCustom, setCreatingCustom] = useState(false);
   const api = useApi();
@@ -89,10 +95,10 @@ export default function Dashboard() {
         description: customMarket.description || `Custom prediction market: ${customMarket.title}`,
         category: customMarket.category,
         options: customMarket.options.filter(o => o.trim()),
-        eventTime: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        eventTime: new Date(customMarket.eventDateTime).toISOString(),
       });
       setShowCustomModal(false);
-      setCustomMarket({ title: "", description: "", category: "general", options: ["Yes", "No"] });
+      setCustomMarket({ title: "", description: "", category: "general", options: ["Yes", "No"], eventDateTime: getDefaultDateTime() });
       await fetchData();
     } finally {
       setCreatingCustom(false);
@@ -376,6 +382,22 @@ export default function Dashboard() {
                     </button>
                   )}
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Resolution Date & Time *
+                </label>
+                <input
+                  type="datetime-local"
+                  value={customMarket.eventDateTime}
+                  onChange={(e) => setCustomMarket({ ...customMarket, eventDateTime: e.target.value })}
+                  min={new Date().toISOString().slice(0, 16)}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-green-500 focus:outline-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Market will automatically close for trading when this time is reached
+                </p>
               </div>
             </div>
 

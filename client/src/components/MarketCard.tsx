@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { useState, useEffect } from "react";
 
 interface Market {
   id: number;
@@ -24,24 +25,43 @@ const categoryColors: Record<string, string> = {
   general: "from-gray-500/20 to-slate-500/20 text-gray-400 border-gray-500/30",
 };
 
-function formatResolutionDate(dateStr?: string): string {
-  if (!dateStr) return "";
+function getCountdown(dateStr?: string): { text: string; isUrgent: boolean; isEnded: boolean } {
+  if (!dateStr) return { text: "", isUrgent: false, isEnded: false };
   const date = new Date(dateStr);
   const now = new Date();
   const diffMs = date.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
   
-  if (diffDays < 0) return "Ended";
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Tomorrow";
-  if (diffDays < 7) return `${diffDays} days`;
-  if (diffDays < 30) return `${Math.ceil(diffDays / 7)} weeks`;
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" });
+  if (diffMs <= 0) return { text: "Ended", isUrgent: false, isEnded: true };
+  
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+  
+  const isUrgent = days === 0 && hours < 24;
+  
+  if (days > 0) {
+    return { text: `${days}d ${hours}h`, isUrgent: false, isEnded: false };
+  } else if (hours > 0) {
+    return { text: `${hours}h ${minutes}m`, isUrgent, isEnded: false };
+  } else if (minutes > 0) {
+    return { text: `${minutes}m ${seconds}s`, isUrgent: true, isEnded: false };
+  } else {
+    return { text: `${seconds}s`, isUrgent: true, isEnded: false };
+  }
 }
 
 export default function MarketCard({ market }: MarketCardProps) {
   const categoryClass = categoryColors[market.category] || categoryColors.general;
-  const resolutionLabel = formatResolutionDate(market.eventTime);
+  const [countdown, setCountdown] = useState(getCountdown(market.eventTime));
+
+  useEffect(() => {
+    if (!market.eventTime || market.status !== "active") return;
+    const interval = setInterval(() => {
+      setCountdown(getCountdown(market.eventTime));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [market.eventTime, market.status]);
 
   return (
     <Link href={`/markets/${market.id}`}>
@@ -97,9 +117,15 @@ export default function MarketCard({ market }: MarketCardProps) {
             <span className="text-gray-500">
               Volume: <span className="text-cyan-400 font-mono">${market.totalVolume.toLocaleString()}</span>
             </span>
-            {resolutionLabel && (
-              <span className="text-gray-500">
-                Resolves: <span className="text-yellow-400">{resolutionLabel}</span>
+            {countdown.text && market.status === "active" && (
+              <span className={`font-mono px-2 py-0.5 rounded ${
+                countdown.isEnded 
+                  ? "bg-gray-500/20 text-gray-400" 
+                  : countdown.isUrgent 
+                    ? "bg-red-500/20 text-red-400 animate-pulse" 
+                    : "bg-yellow-500/20 text-yellow-400"
+              }`}>
+                {countdown.isEnded ? "Ended" : countdown.text}
               </span>
             )}
           </div>
