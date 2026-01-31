@@ -4,11 +4,11 @@ import {
   detectLineraWallet, 
   connectLineraWallet, 
   disconnectLineraWallet,
-  subscribeToWalletEvents,
   generateMockAddress,
   shortenAddress,
   CHECKO_INSTALL_URL,
   LINERA_DOCS_URL,
+  CROISSANT_INSTALL_URL,
   WALLET_STATUS
 } from "../lib/linera-wallet";
 
@@ -22,7 +22,6 @@ export default function Header({ isConnected }: HeaderProps) {
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState("");
   const [walletInstalled, setWalletInstalled] = useState(false);
-  const [walletType, setWalletType] = useState<string | null>(null);
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [useMockWallet, setUseMockWallet] = useState(false);
@@ -35,28 +34,8 @@ export default function Header({ isConnected }: HeaderProps) {
   }, []);
 
   useEffect(() => {
-    const { installed, type } = detectLineraWallet();
+    const { installed } = detectLineraWallet();
     setWalletInstalled(installed);
-    setWalletType(type);
-
-    if (installed) {
-      const unsubscribe = subscribeToWalletEvents(
-        (accounts) => {
-          if (accounts.length === 0) {
-            setWalletConnected(false);
-            setWalletAddress("");
-          } else {
-            setWalletAddress(accounts[0]);
-          }
-        },
-        () => {},
-        () => {
-          setWalletConnected(false);
-          setWalletAddress("");
-        }
-      );
-      return unsubscribe;
-    }
   }, []);
 
   const checkServerStatus = async () => {
@@ -256,7 +235,7 @@ export default function Header({ isConnected }: HeaderProps) {
               </a>
 
               <a
-                href={LINERA_DOCS_URL}
+                href={CROISSANT_INSTALL_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-4 p-4 rounded-xl bg-gray-800/50 border border-gray-700/50 hover:border-cyan-500/50 transition-all group cursor-pointer"
@@ -302,7 +281,7 @@ export default function Header({ isConnected }: HeaderProps) {
                 className="w-full mt-3 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold hover:from-green-400 hover:to-emerald-500 transition-all disabled:opacity-50"
                 style={{ boxShadow: '0 0 20px rgba(0, 255, 136, 0.3)' }}
               >
-                {connecting ? 'Connecting...' : `Connect with ${walletType === 'checko' ? 'CheCko' : walletType === 'croissant' ? 'Croissant' : 'Linera'} Wallet`}
+                {connecting ? 'Connecting...' : 'Connect with CheCko Wallet'}
               </button>
             )}
 

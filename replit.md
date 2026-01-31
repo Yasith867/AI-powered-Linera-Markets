@@ -85,6 +85,28 @@ npm run build        # Build for production
 - AI market creation using GPT-5.2
 - Oracle consensus with 67% threshold
 - Three trading bot strategies
+- CheCko wallet integration using Web3.js API pattern
+- Neon/cyberpunk UI theme with glowing effects
+- Real-time server status indicator
+
+## Wallet Integration
+
+### CheCko Wallet (by ResPeer)
+- Browser extension wallet for Linera blockchain
+- Uses Web3.js API: `const web3 = new Web3(window.linera)`
+- Standard `web3.eth.requestAccounts()` for connection
+- Install from: https://github.com/respeer-ai/linera-wallet/releases
+
+### Integration Pattern
+```typescript
+import Web3 from 'web3';
+const web3 = new Web3(window.linera);
+const accounts = await web3.eth.requestAccounts();
+```
+
+### Demo Mode
+- For testing without CheCko, app provides mock wallet mode
+- Generates simulated addresses for UI testing
 
 ## User Preferences
 

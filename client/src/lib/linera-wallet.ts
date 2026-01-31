@@ -1,15 +1,9 @@
+import Web3 from 'web3';
+
 declare global {
   interface Window {
-    linera?: LineraProvider;
+    linera?: unknown;
   }
-}
-
-interface LineraProvider {
-  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-  on: (event: string, handler: (...args: unknown[]) => void) => void;
-  removeListener: (event: string, handler: (...args: unknown[]) => void) => void;
-  isCheCko?: boolean;
-  isCroissant?: boolean;
 }
 
 export interface WalletState {
@@ -17,104 +11,97 @@ export interface WalletState {
   address: string | null;
   chainId: string | null;
   isInstalled: boolean;
-  walletType: 'checko' | 'croissant' | 'unknown' | null;
 }
 
-export const CHECKO_INSTALL_URL = 'https://github.com/nicholasyan/checko-wallet';
+export const CHECKO_INSTALL_URL = 'https://github.com/respeer-ai/linera-wallet/releases';
 export const LINERA_DOCS_URL = 'https://linera.dev/developers/core_concepts/wallets.html';
+export const CROISSANT_INSTALL_URL = 'https://linera.dev';
 
 export const WALLET_STATUS = {
-  EXPERIMENTAL: true,
-  NOTE: 'Linera browser wallets (CheCko/Croissant) are experimental. Demo mode recommended for testing.'
+  EXPERIMENTAL: false,
+  NOTE: 'CheCko wallet by ResPeer provides Linera blockchain integration via Web3.js API.'
 } as const;
 
-export function detectLineraWallet(): { installed: boolean; type: 'checko' | 'croissant' | 'unknown' | null } {
+let web3Instance: Web3 | null = null;
+
+export function detectLineraWallet(): { installed: boolean } {
   if (typeof window === 'undefined') {
-    return { installed: false, type: null };
+    return { installed: false };
   }
   
-  if (window.linera) {
-    if (window.linera.isCheCko) {
-      return { installed: true, type: 'checko' };
-    }
-    if (window.linera.isCroissant) {
-      return { installed: true, type: 'croissant' };
-    }
-    return { installed: true, type: 'unknown' };
-  }
-  
-  return { installed: false, type: null };
+  return { installed: !!window.linera };
 }
 
-export async function connectLineraWallet(): Promise<{ success: boolean; address?: string; chainId?: string; error?: string }> {
+export function getWeb3Instance(): Web3 | null {
+  if (!window.linera) return null;
+  
+  if (!web3Instance) {
+    web3Instance = new Web3(window.linera as never);
+  }
+  
+  return web3Instance;
+}
+
+export async function connectLineraWallet(): Promise<{ success: boolean; address?: string; error?: string }> {
   const { installed } = detectLineraWallet();
   
   if (!installed || !window.linera) {
     return { 
       success: false, 
-      error: 'Linera wallet not detected. Please install CheCko or Croissant wallet.' 
+      error: 'CheCko wallet not detected. Please install the CheCko browser extension.' 
     };
   }
   
   try {
-    const accounts = await window.linera.request({ 
-      method: 'linera_requestAccounts' 
-    }) as string[];
-    
-    if (!accounts || accounts.length === 0) {
-      return { success: false, error: 'No accounts returned from wallet' };
+    const web3 = getWeb3Instance();
+    if (!web3) {
+      return { success: false, error: 'Failed to initialize Web3 with Linera provider' };
     }
     
-    const chains = await window.linera.request({ 
-      method: 'linera_getChains' 
-    }) as string[];
+    const accounts = await web3.eth.requestAccounts();
+    
+    if (!accounts || accounts.length === 0) {
+      return { success: false, error: 'No accounts returned from CheCko wallet' };
+    }
     
     return {
       success: true,
-      address: accounts[0],
-      chainId: chains?.[0] || undefined
+      address: accounts[0]
     };
   } catch (err) {
     const error = err as Error;
-    if (error.message?.includes('User rejected')) {
+    if (error.message?.includes('User rejected') || error.message?.includes('denied')) {
       return { success: false, error: 'Connection rejected by user' };
     }
-    return { success: false, error: error.message || 'Failed to connect wallet' };
+    return { success: false, error: error.message || 'Failed to connect to CheCko wallet' };
+  }
+}
+
+export async function getAccounts(): Promise<string[]> {
+  const web3 = getWeb3Instance();
+  if (!web3) return [];
+  
+  try {
+    return await web3.eth.getAccounts();
+  } catch {
+    return [];
+  }
+}
+
+export async function getChainId(): Promise<string | null> {
+  const web3 = getWeb3Instance();
+  if (!web3) return null;
+  
+  try {
+    const chainId = await web3.eth.getChainId();
+    return chainId.toString();
+  } catch {
+    return null;
   }
 }
 
 export async function disconnectLineraWallet(): Promise<void> {
-  if (window.linera) {
-    try {
-      await window.linera.request({ method: 'linera_disconnect' });
-    } catch {
-      // Disconnect may not be supported, that's okay
-    }
-  }
-}
-
-export function subscribeToWalletEvents(
-  onAccountsChanged: (accounts: string[]) => void,
-  onChainChanged: (chainId: string) => void,
-  onDisconnect: () => void
-): () => void {
-  if (!window.linera) return () => {};
-  
-  const accountsHandler = (accounts: unknown) => onAccountsChanged(accounts as string[]);
-  const chainHandler = (chainId: unknown) => onChainChanged(chainId as string);
-  const disconnectHandler = () => onDisconnect();
-  
-  window.linera.on('accountsChanged', accountsHandler);
-  window.linera.on('chainChanged', chainHandler);
-  window.linera.on('disconnect', disconnectHandler);
-  
-  return () => {
-    if (window.linera) {
-      window.linera.removeListener('accountsChanged', accountsHandler);
-      window.linera.removeListener('chainChanged', chainHandler);
-      window.linera.removeListener('disconnect', disconnectHandler);
-    }
-  };
+  web3Instance = null;
 }
 
 export function generateMockAddress(): string {
