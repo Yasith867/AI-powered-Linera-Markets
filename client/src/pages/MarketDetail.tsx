@@ -50,6 +50,13 @@ export default function MarketDetail() {
   const [txStatus, setTxStatus] = useState<string | null>(null);
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [balanceError, setBalanceError] = useState<string | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingTrade, setPendingTrade] = useState<{
+    optionIndex: number;
+    amount: number;
+    isBuy: boolean;
+    optionName: string;
+  } | null>(null);
   const api = useApi();
 
   useEffect(() => {
@@ -105,7 +112,7 @@ export default function MarketDetail() {
     if (data) setMarket(data as Market);
   };
 
-  const executeTrade = async (isBuy: boolean) => {
+  const initiateTrade = (isBuy: boolean) => {
     if (selectedOption === null || !amount) return;
     
     const tradeAmount = parseFloat(amount);
@@ -114,6 +121,39 @@ export default function MarketDetail() {
       setTimeout(() => setBalanceError(null), 3000);
       return;
     }
+    
+    if (tradeAmount > walletBalance) {
+      setBalanceError(`Insufficient balance. You have ${walletBalance.toFixed(2)} LINERA but need ${tradeAmount} LINERA.`);
+      return;
+    }
+    
+    const optionName = market?.options[selectedOption] || `Option ${selectedOption + 1}`;
+    setPendingTrade({
+      optionIndex: selectedOption,
+      amount: tradeAmount,
+      isBuy,
+      optionName
+    });
+    setShowConfirmDialog(true);
+  };
+
+  const cancelTrade = () => {
+    setShowConfirmDialog(false);
+    setPendingTrade(null);
+  };
+
+  const confirmAndExecuteTrade = async () => {
+    if (!pendingTrade) return;
+    setShowConfirmDialog(false);
+    await executeTrade(pendingTrade.isBuy, pendingTrade.optionIndex, pendingTrade.amount);
+    setPendingTrade(null);
+  };
+
+  const executeTrade = async (isBuy: boolean, optionIdx?: number, tradeAmt?: number) => {
+    const useOption = optionIdx ?? selectedOption;
+    const useAmount = tradeAmt ?? parseFloat(amount);
+    
+    if (useOption === null || isNaN(useAmount) || useAmount <= 0) return;
     
     setTrading(true);
     setTxStatus(null);
@@ -142,7 +182,7 @@ export default function MarketDetail() {
         await restoreWalletConnection();
         setTxStatus("Checking wallet balance...");
         
-        const balanceCheck = await checkSufficientBalance(tradeAmount);
+        const balanceCheck = await checkSufficientBalance(useAmount);
         setWalletBalance(balanceCheck.balance);
         
         if (!balanceCheck.sufficient) {
@@ -169,8 +209,8 @@ export default function MarketDetail() {
           mutation,
           {
             marketId,
-            optionIndex: selectedOption,
-            amount: parseFloat(amount),
+            optionIndex: useOption,
+            amount: useAmount,
             isBuy
           }
         );
@@ -180,12 +220,13 @@ export default function MarketDetail() {
           
           await api.post(`/api/markets/${params?.id}/trade`, {
             traderAddress,
-            optionIndex: selectedOption,
-            amount: parseFloat(amount),
+            optionIndex: useOption,
+            amount: useAmount,
             isBuy,
             operationId: mutationResult.operationId,
           });
           
+          setWalletBalance(prev => Math.max(0, prev - useAmount));
           setTimeout(() => setTxStatus("Trade executed on Linera! (~200ms finality)"), 1500);
           setTimeout(() => setTxStatus(null), 5000);
         } else if (mutationResult.error?.includes('rejected') || mutationResult.error?.includes('denied') || mutationResult.error?.includes('cancel')) {
@@ -198,12 +239,13 @@ export default function MarketDetail() {
           
           await api.post(`/api/markets/${params?.id}/trade`, {
             traderAddress,
-            optionIndex: selectedOption,
-            amount: parseFloat(amount),
+            optionIndex: useOption,
+            amount: useAmount,
             isBuy,
             operationId: `testnet_${Date.now()}`,
           });
           
+          setWalletBalance(prev => Math.max(0, prev - useAmount));
           setTimeout(() => setTxStatus("Trade recorded on testnet! (App not deployed yet)"), 1500);
           setTimeout(() => setTxStatus(null), 5000);
         } else {
@@ -425,15 +467,15 @@ export default function MarketDetail() {
                   disabled={trading}
                 />
                 <button
-                  onClick={() => executeTrade(true)}
-                  disabled={trading || !amount}
+                  onClick={() => initiateTrade(true)}
+                  disabled={trading || !amount || selectedOption === null}
                   className="btn-primary px-6"
                 >
                   {trading ? "..." : "Buy"}
                 </button>
                 <button
-                  onClick={() => executeTrade(false)}
-                  disabled={trading || !amount}
+                  onClick={() => initiateTrade(false)}
+                  disabled={trading || !amount || selectedOption === null}
                   className="btn-secondary px-6"
                 >
                   {trading ? "..." : "Sell"}
@@ -475,6 +517,67 @@ export default function MarketDetail() {
           </div>
         </div>
       </div>
+
+      {showConfirmDialog && pendingTrade && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center">
+                <span className="text-xl">💰</span>
+              </div>
+              <h3 className="text-xl font-bold text-white">Confirm Transaction</h3>
+            </div>
+            
+            <div className="bg-gray-800 rounded-lg p-4 mb-4">
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-400">Action</span>
+                <span className={`font-medium ${pendingTrade.isBuy ? 'text-green-400' : 'text-red-400'}`}>
+                  {pendingTrade.isBuy ? 'Buy' : 'Sell'}
+                </span>
+              </div>
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-400">Option</span>
+                <span className="text-white font-medium">{pendingTrade.optionName}</span>
+              </div>
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-400">Amount</span>
+                <span className="text-white font-medium">{pendingTrade.amount} LINERA</span>
+              </div>
+              <div className="border-t border-gray-700 my-2 pt-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Your Balance</span>
+                  <span className="text-green-400 font-medium">{walletBalance.toFixed(2)} LINERA</span>
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span className="text-gray-400">After Trade</span>
+                  <span className="text-yellow-400 font-medium">
+                    {(walletBalance - pendingTrade.amount).toFixed(2)} LINERA
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <p className="text-xs text-gray-500 mb-4">
+              This transaction will be signed with your CheCko wallet ({shortenAddress(walletAddress || '', 6)})
+            </p>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={cancelTrade}
+                className="flex-1 py-3 px-4 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmAndExecuteTrade}
+                className="flex-1 py-3 px-4 rounded-lg bg-green-600 hover:bg-green-500 text-white font-medium transition"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
