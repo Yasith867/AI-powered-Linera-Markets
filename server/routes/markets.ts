@@ -40,6 +40,18 @@ marketRoutes.get("/:id", async (req, res) => {
   }
 });
 
+marketRoutes.delete("/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await db.delete(markets).where(eq(markets.id, id));
+    broadcast({ type: "market_deleted", data: { marketId: id } });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting market:", error);
+    res.status(500).json({ error: "Failed to delete market" });
+  }
+});
+
 marketRoutes.post("/", async (req, res) => {
   try {
     const startTime = performance.now();

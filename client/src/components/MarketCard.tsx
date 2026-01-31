@@ -14,6 +14,7 @@ interface Market {
 
 interface MarketCardProps {
   market: Market;
+  onDelete?: (id: number) => void;
 }
 
 const categoryColors: Record<string, string> = {
@@ -51,7 +52,7 @@ function getCountdown(dateStr?: string): { text: string; isUrgent: boolean; isEn
   }
 }
 
-export default function MarketCard({ market }: MarketCardProps) {
+export default function MarketCard({ market, onDelete }: MarketCardProps) {
   const categoryClass = categoryColors[market.category] || categoryColors.general;
   const [countdown, setCountdown] = useState(getCountdown(market.eventTime));
 
@@ -63,9 +64,26 @@ export default function MarketCard({ market }: MarketCardProps) {
     return () => clearInterval(interval);
   }, [market.eventTime, market.status]);
 
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onDelete && confirm(`Delete "${market.title}"?`)) {
+      onDelete(market.id);
+    }
+  };
+
   return (
     <Link href={`/markets/${market.id}`}>
-      <div className="card hover:border-green-500/40 transition-all duration-300 cursor-pointer group hover:shadow-[0_0_30px_rgba(0,255,136,0.1)]">
+      <div className="card hover:border-green-500/40 transition-all duration-300 cursor-pointer group hover:shadow-[0_0_30px_rgba(0,255,136,0.1)] relative">
+        {onDelete && (
+          <button
+            onClick={handleDelete}
+            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+            title="Delete market"
+          >
+            &times;
+          </button>
+        )}
         <div className="flex items-start justify-between mb-3">
           <span className={`text-xs px-2.5 py-1 rounded-full bg-gradient-to-r ${categoryClass} border font-semibold`}>
             {market.category}

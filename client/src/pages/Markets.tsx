@@ -38,6 +38,11 @@ export default function Markets() {
     filter === "all" ? true : m.status === filter
   );
 
+  const deleteMarket = async (id: number) => {
+    await api.del(`/api/markets/${id}`);
+    setMarkets(markets.filter(m => m.id !== id));
+  };
+
   const createMarket = async () => {
     setCreating(true);
     try {
@@ -160,7 +165,7 @@ export default function Markets() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredMarkets.map((market) => (
-          <MarketCard key={market.id} market={market} />
+          <MarketCard key={market.id} market={market} onDelete={deleteMarket} />
         ))}
       </div>
 
