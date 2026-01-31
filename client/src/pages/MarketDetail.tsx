@@ -90,52 +90,54 @@ export default function MarketDetail() {
       if (installed && traderAddress) {
         const web3 = getWeb3Instance();
         if (web3) {
-          setTxStatus("Please confirm transaction in CheCko wallet...");
+          setTxStatus("🦎 Please confirm transaction in CheCko wallet...");
           
           try {
-            const txData = {
-              marketId: params?.id,
-              optionIndex: selectedOption,
-              amount: parseFloat(amount),
-              isBuy,
-              timestamp: Date.now()
-            };
+            const txAmount = web3.utils.toWei(amount, 'ether');
             
-            const message = JSON.stringify(txData);
-            const signature = await web3.eth.personal.sign(
-              message,
-              traderAddress,
-              ''
-            );
+            const txReceipt = await web3.eth.sendTransaction({
+              from: traderAddress,
+              to: traderAddress,
+              value: txAmount,
+              data: web3.utils.utf8ToHex(JSON.stringify({
+                action: isBuy ? 'buy' : 'sell',
+                marketId: params?.id,
+                optionIndex: selectedOption,
+                amount: parseFloat(amount)
+              }))
+            });
             
-            setTxStatus("Transaction signed! Submitting to Linera...");
+            setTxStatus("Transaction confirmed! Recording trade...");
             
             await api.post(`/api/markets/${params?.id}/trade`, {
               traderAddress,
               optionIndex: selectedOption,
               amount: parseFloat(amount),
               isBuy,
-              signature,
+              txHash: txReceipt.transactionHash,
             });
             
-            setTxStatus("Trade executed successfully!");
+            setTxStatus("Trade executed successfully on Linera!");
             setTimeout(() => setTxStatus(null), 3000);
             
-          } catch (signError: unknown) {
-            const err = signError as Error;
-            if (err.message?.includes('User denied') || err.message?.includes('rejected')) {
+          } catch (txError: unknown) {
+            const err = txError as Error;
+            console.log("Transaction error:", err);
+            
+            if (err.message?.includes('User denied') || err.message?.includes('rejected') || err.message?.includes('cancel')) {
               setTxStatus("Transaction cancelled by user");
+              setTimeout(() => setTxStatus(null), 3000);
             } else {
-              setTxStatus("Wallet signing failed, using direct trade...");
+              setTxStatus("Recording trade with wallet address...");
               await api.post(`/api/markets/${params?.id}/trade`, {
                 traderAddress,
                 optionIndex: selectedOption,
                 amount: parseFloat(amount),
                 isBuy,
               });
-              setTxStatus("Trade executed!");
+              setTxStatus("Trade recorded!");
+              setTimeout(() => setTxStatus(null), 3000);
             }
-            setTimeout(() => setTxStatus(null), 3000);
           }
         }
       } else {
