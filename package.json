@@ -11,6 +11,7 @@
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
+    "@wallet-standard/core": "^1.1.1",
     "concurrently": "^9.2.1",
     "cors": "^2.8.6",
     "drizzle-orm": "^0.39.3",
