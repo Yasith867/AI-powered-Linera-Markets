@@ -35,8 +35,9 @@ Return valid JSON with the following structure:
   "description": "Brief context about the event and why it matters",
   "category": "sports|crypto|politics|entertainment|technology",
   "options": ["Option A", "Option B", ...],
-  "eventTime": "ISO timestamp when event resolves (optional)"
+  "daysUntilResolution": 4
 }
+IMPORTANT: Markets should resolve within 4-5 days from creation. Set daysUntilResolution between 3 and 5.
 Focus on markets that:
 - Have clear binary or multiple-choice outcomes
 - Can be objectively verified
@@ -55,13 +56,18 @@ Focus on markets that:
     
     const initialOdds = marketData.options.map(() => 1 / marketData.options.length);
     
+    // Calculate event time: default to 4 days if not specified
+    const daysUntilResolution = marketData.daysUntilResolution || 4;
+    const eventTime = new Date();
+    eventTime.setDate(eventTime.getDate() + daysUntilResolution);
+    
     const [market] = await db.insert(markets).values({
       title: marketData.title,
       description: marketData.description,
       category: marketData.category || category || "general",
       options: marketData.options,
       odds: initialOdds,
-      eventTime: marketData.eventTime ? new Date(marketData.eventTime) : null,
+      eventTime: eventTime,
       createdBy: "ai_agent",
     }).returning();
 

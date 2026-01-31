@@ -66,13 +66,19 @@ marketRoutes.post("/", async (req, res) => {
       { title, description, options, eventTime }
     );
     
+    // Default to 4 days from now if no event time specified
+    let resolveTime = eventTime ? new Date(eventTime) : new Date();
+    if (!eventTime) {
+      resolveTime.setDate(resolveTime.getDate() + 4);
+    }
+    
     const [market] = await db.insert(markets).values({
       title,
       description,
       category,
       options,
       odds: initialOdds,
-      eventTime: eventTime ? new Date(eventTime) : null,
+      eventTime: resolveTime,
       lineraChainId: chain.chainId,
     }).returning();
 
