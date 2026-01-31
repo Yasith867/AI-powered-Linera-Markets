@@ -40,9 +40,16 @@ export default function Demo() {
         <h1 className="text-4xl font-bold text-white mb-4">
           AI-Powered Prediction Market Infrastructure
         </h1>
-        <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-          A comprehensive prediction market platform demonstrating advanced Linera microchain 
-          architecture with AI market creation, decentralized oracle consensus, and automated trading.
+        <p className="text-gray-300 text-xl max-w-4xl mx-auto leading-relaxed">
+          Welcome to Linera Markets — a next-generation prediction market platform built on the Linera blockchain. 
+          This platform combines cutting-edge AI technology with decentralized infrastructure to create, trade, 
+          and resolve prediction markets with unprecedented speed and reliability.
+        </p>
+        <p className="text-gray-400 text-lg max-w-3xl mx-auto mt-4 leading-relaxed">
+          Our microchain architecture enables each market to run on its own dedicated chain, ensuring 
+          scalability and low latency. AI-powered market generation creates relevant prediction markets 
+          automatically, while our oracle network provides trustless outcome verification through 
+          consensus voting. Automated trading bots execute sophisticated strategies around the clock.
         </p>
       </div>
 
