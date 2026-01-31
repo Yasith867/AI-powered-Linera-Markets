@@ -381,9 +381,62 @@ The platform includes four Linera smart contracts following SDK v0.15 patterns:
 | Start | Activate automated execution |
 | Stop | Pause bot operations |
 
+### Contract Architecture
+
+Linera applications consist of two major components:
+
+**Contract (Gas-Metered)**
+- Executes operations and messages
+- Makes cross-application calls
+- Modifies application state
+
+**Service (Non-Metered, Read-Only)**
+- Queries application state
+- Populates frontend with data
+- Handles GraphQL queries
+
 ### Contract Code Example
 
 ```rust
+// contracts/market/src/lib.rs
+use linera_sdk::linera_base_types::*;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Deserialize, Serialize)]
+pub enum Operation {
+    CreateMarket {
+        title: String,
+        options: Vec<String>,
+        liquidity: Amount,
+    },
+    PlaceTrade {
+        market_id: u64,
+        option_index: u32,
+        amount: Amount,
+        is_buy: bool,
+    },
+    ResolveMarket {
+        market_id: u64,
+        outcome: u32,
+    },
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub enum Message {
+    OracleVote {
+        market_id: u64,
+        outcome: u32,
+        confidence: u8,
+    },
+    MarketResolved {
+        market_id: u64,
+        winning_outcome: u32,
+    },
+}
+```
+
+```rust
+// contracts/market/src/contract.rs
 #[async_trait]
 impl Contract for PredictionMarketContract {
     type Message = Message;
@@ -402,13 +455,42 @@ impl Contract for PredictionMarketContract {
                 self.state.next_market_id.set(market_id);
                 Response::MarketCreated { market_id }
             }
-            Operation::PlaceTrade { market_id, option, amount, is_buy } => {
-                // AMM pricing logic implementation
-                Response::TradeExecuted { tx_hash }
+            Operation::PlaceTrade { market_id, option_index, amount, is_buy } => {
+                // AMM constant product formula: k = x * y
+                Response::TradeExecuted { tx_hash: generate_tx_hash() }
+            }
+            Operation::ResolveMarket { market_id, outcome } => {
+                // Verify oracle consensus reached 67%
+                Response::MarketResolved { market_id, outcome }
+            }
+        }
+    }
+
+    async fn execute_message(&mut self, message: Self::Message) {
+        match message {
+            Message::OracleVote { market_id, outcome, confidence } => {
+                // Record vote from oracle chain
+                self.state.record_vote(market_id, outcome, confidence).await;
+            }
+            Message::MarketResolved { market_id, winning_outcome } => {
+                // Process resolution from oracle consensus
+                self.state.resolve_market(market_id, winning_outcome).await;
             }
         }
     }
 }
+```
+
+### Deployment Commands
+
+```bash
+# Build contracts
+cd contracts/market && cargo build --release --target wasm32-unknown-unknown
+
+# Publish and create application
+linera publish-and-create \
+  target/wasm32-unknown-unknown/release/market_{contract,service}.wasm \
+  --json-argument '{"admin": "owner_address", "oracle_threshold": 67}'
 ```
 
 ---
@@ -421,8 +503,26 @@ impl Contract for PredictionMarketContract {
 |-----------|-------|
 | Linera SDK Version | v0.15 |
 | Target Network | Testnet Conway |
+| Faucet URL | https://faucet.testnet-conway.linera.net |
 | Number of Contracts | 4 |
-| Contract Language | Rust (WASM compiled) |
+| Contract Language | Rust (WASM compiled to wasm32-unknown-unknown) |
+
+### Linera Core Concepts
+
+Linera Markets leverages the following Linera blockchain primitives:
+
+**Microchains**
+
+A microchain is a chain of blocks describing successive changes to a shared state. Unlike traditional blockchains, Linera supports an arbitrary number of microchains coexisting in the network, all sharing the same validators and security level. Each prediction market, oracle node, and trading bot operates on its own dedicated microchain for complete isolation.
+
+**Cross-Chain Messaging**
+
+Applications communicate across microchains asynchronously. When an oracle submits a vote or a bot executes a trade, cross-chain messages propagate the state changes. Messages are placed in the target chain's inbox and processed when the chain owner creates the next block.
+
+**Operations and Messages**
+
+- **Operations**: Defined by application developers, created by chain owners in block proposals
+- **Messages**: Result from operation execution, sent between chains within the same application
 
 ### Linera Features Utilized
 
@@ -430,18 +530,67 @@ impl Contract for PredictionMarketContract {
 |---------|----------------|
 | Microchains | Each market, oracle, and bot operates on dedicated chains for isolation |
 | Cross-chain Messages | Oracle votes and market resolutions propagate across chains |
-| GraphQL API | Contract state queries for frontend data retrieval |
-| Views (RootView) | Persistent state management following Linera patterns |
+| GraphQL API | Contract state queries via Node Service (`linera service`) |
+| Views (RootView) | Persistent state management following Linera SDK patterns |
 | Real-time Finality | Sub-500ms trade execution and confirmation |
+| WASM Execution | All contracts compiled to WebAssembly for the Linera VM |
 
 ### Wallet Integration
 
-The platform supports integration with Linera-compatible wallets:
+The platform integrates with Linera-compatible browser wallets:
 
-- **CheCko Wallet**: Browser extension for Linera transactions
-- **Croissant Wallet**: Alternative wallet option
+**CheCko Wallet** (Primary)
 
-Wallet transactions use the `linera_graphqlMutation` RPC for on-chain operations.
+CheCko is a browser extension wallet developed by ResPeer that implements a "Microchain as a Service" architecture. It separates the wallet client from the Linera Node Service, allowing the browser extension to sign transactions while the node service handles block execution.
+
+- Installation: https://github.com/respeer-ai/linera-wallet/releases
+- Provider: `window.linera`
+- API: Web3.js compatible interface
+
+**Integration Code Example**:
+
+```javascript
+// Connect to CheCko wallet
+const web3 = new Web3(window.linera);
+const accounts = await web3.eth.requestAccounts();
+
+// Execute Linera GraphQL mutation
+await window.linera.request({
+  method: 'linera_graphqlMutation',
+  params: {
+    publicKey: accounts[0],
+    applicationId: 'your-application-id',
+    query: { query: mutationString, variables: {} },
+    operationName: 'PlaceTrade'
+  }
+});
+```
+
+**Developer Wallets**
+
+For development and testing, use the Linera CLI to create developer wallets:
+
+```bash
+# Initialize wallet from faucet
+linera wallet init --faucet https://faucet.testnet-conway.linera.net
+linera wallet request-chain --faucet https://faucet.testnet-conway.linera.net
+
+# Check balance
+linera sync
+linera query-balance
+```
+
+### Node Service
+
+The Linera client runs in service mode to expose a GraphQL API:
+
+```bash
+linera service --port 8080
+```
+
+This exposes:
+- GraphQL IDE at `http://localhost:8080/`
+- Application endpoints at `http://localhost:8080/chains/<chain-id>/applications/<application-id>`
 
 ---
 
