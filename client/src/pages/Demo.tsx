@@ -157,19 +157,6 @@ export default function Demo() {
 
       {activeTab === "live" && (
         <div className="space-y-6">
-          <div className="card bg-green-500/10 border-green-500/30">
-            <div className="flex items-start gap-4">
-              <div className="text-3xl">🚀</div>
-              <div>
-                <h3 className="text-lg font-bold text-green-400 mb-2">Fully Functional Platform</h3>
-                <p className="text-gray-400">
-                  This is not a mockup - it's a complete, working prediction market platform with real data persistence, 
-                  real AI integration, and real-time updates. Try it yourself!
-                </p>
-              </div>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="card">
               <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
