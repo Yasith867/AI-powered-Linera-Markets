@@ -33,6 +33,7 @@ interface Market {
   liquidity: number;
   status: string;
   trades: Trade[];
+  resolvedOutcome?: number | null;
 }
 
 export default function MarketDetail() {
@@ -247,45 +248,70 @@ export default function MarketDetail() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
-          <h2 className="text-xl font-semibold text-white">Trading Options</h2>
-          {market.options.map((option, idx) => (
-            <div
-              key={idx}
-              onClick={() => setSelectedOption(idx)}
-              className={`card cursor-pointer transition-all ${
-                selectedOption === idx
-                  ? "border-green-500 bg-green-500/10"
-                  : "hover:border-gray-700"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                      selectedOption === idx
-                        ? "bg-green-500 text-white"
-                        : "bg-gray-800 text-gray-400"
-                    }`}
-                  >
-                    {idx + 1}
+          <h2 className="text-xl font-semibold text-white">
+            {market.status === "resolved" ? "Final Results" : "Trading Options"}
+          </h2>
+          {market.options.map((option, idx) => {
+            const isWinner = market.status === "resolved" && market.resolvedOutcome === idx;
+            const isLoser = market.status === "resolved" && market.resolvedOutcome !== idx;
+            return (
+              <div
+                key={idx}
+                onClick={() => market.status === "active" && setSelectedOption(idx)}
+                className={`card transition-all ${
+                  isWinner
+                    ? "border-green-500 bg-green-500/20"
+                    : isLoser
+                    ? "opacity-60 border-gray-700"
+                    : selectedOption === idx
+                    ? "border-green-500 bg-green-500/10 cursor-pointer"
+                    : market.status === "active" ? "hover:border-gray-700 cursor-pointer" : ""
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                        isWinner
+                          ? "bg-green-500 text-white"
+                          : isLoser
+                          ? "bg-gray-700 text-gray-500"
+                          : selectedOption === idx
+                          ? "bg-green-500 text-white"
+                          : "bg-gray-800 text-gray-400"
+                      }`}
+                    >
+                      {isWinner ? "🏆" : idx + 1}
+                    </div>
+                    <div>
+                      <span className={`font-medium ${isWinner ? "text-green-400" : isLoser ? "text-gray-500" : "text-white"}`}>
+                        {option}
+                      </span>
+                      {isWinner && (
+                        <span className="ml-2 text-xs bg-green-500/30 text-green-400 px-2 py-0.5 rounded font-bold">
+                          WINNER
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <span className="font-medium text-white">{option}</span>
+                  <div className="text-right">
+                    <p className={`text-2xl font-bold ${isWinner ? "text-green-400" : isLoser ? "text-gray-500" : "text-green-400"}`}>
+                      {((market.odds[idx] || 0) * 100).toFixed(1)}%
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {isWinner ? "winning outcome" : isLoser ? "final probability" : "implied probability"}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-green-400">
-                    {((market.odds[idx] || 0) * 100).toFixed(1)}%
-                  </p>
-                  <p className="text-xs text-gray-400">implied probability</p>
+                <div className="mt-3 h-2 bg-gray-800 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all ${isWinner ? "bg-gradient-to-r from-green-500 to-emerald-400" : isLoser ? "bg-gray-600" : "bg-gradient-to-r from-green-500 to-emerald-400"}`}
+                    style={{ width: `${(market.odds[idx] || 0) * 100}%` }}
+                  />
                 </div>
               </div>
-              <div className="mt-3 h-2 bg-gray-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-green-500 to-emerald-400 transition-all"
-                  style={{ width: `${(market.odds[idx] || 0) * 100}%` }}
-                />
-              </div>
-            </div>
-          ))}
+            );
+          })}
 
           {market.status === "active" && selectedOption !== null && (
             <div className="card bg-gray-800/30">

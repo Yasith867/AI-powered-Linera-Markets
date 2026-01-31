@@ -124,6 +124,11 @@ export default function Dashboard() {
     }
   };
 
+  const deleteMarket = async (id: number) => {
+    await api.del(`/api/markets/${id}`);
+    setMarkets(markets.filter(m => m.id !== id));
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -197,9 +202,14 @@ export default function Dashboard() {
             </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {markets.map((market) => (
-              <MarketCard key={market.id} market={market} />
+            {markets.filter(m => m.status === "active").slice(0, 4).map((market) => (
+              <MarketCard key={market.id} market={market} onDelete={deleteMarket} />
             ))}
+            {markets.filter(m => m.status === "active").length === 0 && (
+              <div className="col-span-2 text-center py-8 text-gray-400">
+                No active markets. Create one using the buttons above!
+              </div>
+            )}
           </div>
         </div>
 

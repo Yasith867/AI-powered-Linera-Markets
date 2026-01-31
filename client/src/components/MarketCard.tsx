@@ -10,6 +10,7 @@ interface Market {
   totalVolume: number;
   status: string;
   eventTime?: string;
+  resolvedOutcome?: number | null;
 }
 
 interface MarketCardProps {
@@ -105,29 +106,37 @@ export default function MarketCard({ market, onDelete }: MarketCardProps) {
         </h3>
 
         <div className="mt-4 space-y-2.5">
-          {market.options.slice(0, 2).map((option, idx) => (
-            <div key={idx} className="flex items-center justify-between">
-              <span className="text-sm text-gray-300 truncate flex-1">{option}</span>
-              <div className="flex items-center gap-2">
-                <div className="w-20 h-2 bg-gray-800/80 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{ 
-                      width: `${(market.odds[idx] || 0) * 100}%`,
-                      background: 'linear-gradient(90deg, #00ff88, #00aaff)',
-                      boxShadow: '0 0 10px rgba(0, 255, 136, 0.5)',
-                    }}
-                  />
-                </div>
-                <span 
-                  className="text-xs font-mono text-green-400 w-14 text-right"
-                  style={{ textShadow: '0 0 5px rgba(0, 255, 136, 0.5)' }}
-                >
-                  {((market.odds[idx] || 0) * 100).toFixed(1)}%
+          {market.options.slice(0, 2).map((option, idx) => {
+            const isWinner = market.status === "resolved" && market.resolvedOutcome === idx;
+            const isLoser = market.status === "resolved" && market.resolvedOutcome !== idx;
+            return (
+              <div key={idx} className={`flex items-center justify-between ${isWinner ? "bg-green-500/10 -mx-2 px-2 py-1 rounded-lg border border-green-500/30" : ""}`}>
+                <span className={`text-sm truncate flex-1 flex items-center gap-2 ${isWinner ? "text-green-400 font-semibold" : isLoser ? "text-gray-500" : "text-gray-300"}`}>
+                  {isWinner && <span className="text-xs">🏆</span>}
+                  {option}
+                  {isWinner && <span className="text-xs bg-green-500/20 px-1.5 py-0.5 rounded text-green-400">WON</span>}
                 </span>
+                <div className="flex items-center gap-2">
+                  <div className="w-20 h-2 bg-gray-800/80 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ 
+                        width: `${(market.odds[idx] || 0) * 100}%`,
+                        background: isWinner ? 'linear-gradient(90deg, #22c55e, #16a34a)' : isLoser ? '#6b7280' : 'linear-gradient(90deg, #00ff88, #00aaff)',
+                        boxShadow: isWinner ? '0 0 10px rgba(34, 197, 94, 0.5)' : isLoser ? 'none' : '0 0 10px rgba(0, 255, 136, 0.5)',
+                      }}
+                    />
+                  </div>
+                  <span 
+                    className={`text-xs font-mono w-14 text-right ${isWinner ? "text-green-400" : isLoser ? "text-gray-500" : "text-green-400"}`}
+                    style={isWinner ? { textShadow: '0 0 5px rgba(34, 197, 94, 0.5)' } : isLoser ? {} : { textShadow: '0 0 5px rgba(0, 255, 136, 0.5)' }}
+                  >
+                    {((market.odds[idx] || 0) * 100).toFixed(1)}%
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="mt-4 pt-3 border-t border-gray-800/50 flex items-center justify-between text-xs">
@@ -135,7 +144,11 @@ export default function MarketCard({ market, onDelete }: MarketCardProps) {
             <span className="text-gray-500">
               Volume: <span className="text-cyan-400 font-mono">${market.totalVolume.toLocaleString()}</span>
             </span>
-            {countdown.text && market.status === "active" && (
+            {market.status === "resolved" ? (
+              <span className="font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-400">
+                Resolved
+              </span>
+            ) : countdown.text && market.status === "active" && (
               <span className={`font-mono px-2 py-0.5 rounded ${
                 countdown.isEnded 
                   ? "bg-gray-500/20 text-gray-400" 
@@ -147,8 +160,8 @@ export default function MarketCard({ market, onDelete }: MarketCardProps) {
               </span>
             )}
           </div>
-          <span className="text-green-400 font-semibold flex items-center gap-1">
-            Trade <span className="group-hover:translate-x-1 transition-transform inline-block">→</span>
+          <span className={`font-semibold flex items-center gap-1 ${market.status === "resolved" ? "text-purple-400" : "text-green-400"}`}>
+            {market.status === "resolved" ? "View" : "Trade"} <span className="group-hover:translate-x-1 transition-transform inline-block">→</span>
           </span>
         </div>
       </div>
