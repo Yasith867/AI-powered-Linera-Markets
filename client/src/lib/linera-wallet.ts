@@ -19,7 +19,17 @@ export interface WalletState {
 export interface LineraAccount {
   publicKey: string;
   chainId: string;
+  balance?: string;
 }
+
+export interface WalletBalance {
+  balance: string;
+  formatted: number;
+  hasBalance: boolean;
+  lastUpdated: number;
+}
+
+let cachedBalance: WalletBalance | null = null;
 
 export const CHECKO_INSTALL_URL = 'https://github.com/respeer-ai/linera-wallet/releases';
 export const LINERA_DOCS_URL = 'https://linera.dev/developers/core_concepts/wallets.html';
@@ -124,6 +134,118 @@ export function getConnectedAccount(): LineraAccount | null {
 
 export function isWalletConnected(): boolean {
   return !!connectedAccount && !!web3Instance;
+}
+
+export async function getWalletBalance(): Promise<WalletBalance> {
+  if (!window.linera) {
+    return { balance: '0', formatted: 0, hasBalance: false, lastUpdated: Date.now() };
+  }
+  
+  if (!connectedAccount) {
+    return { balance: '0', formatted: 0, hasBalance: false, lastUpdated: Date.now() };
+  }
+  
+  if (cachedBalance && Date.now() - cachedBalance.lastUpdated < 5000) {
+    return cachedBalance;
+  }
+  
+  try {
+    const result = await window.linera.request({
+      method: 'linera_queryBalance',
+      params: {
+        publicKey: connectedAccount.publicKey
+      }
+    }) as { balance?: string } | string | null;
+    
+    let balanceStr = '0';
+    
+    if (typeof result === 'string') {
+      balanceStr = result;
+    } else if (result && typeof result === 'object' && 'balance' in result) {
+      balanceStr = result.balance || '0';
+    }
+    
+    const formattedBalance = parseFloat(balanceStr) || 0;
+    
+    cachedBalance = {
+      balance: balanceStr,
+      formatted: formattedBalance,
+      hasBalance: formattedBalance > 0,
+      lastUpdated: Date.now()
+    };
+    
+    return cachedBalance;
+  } catch (err) {
+    console.log('Balance query failed, using fallback:', err);
+    
+    try {
+      const query = `
+        query GetBalance {
+          balance
+        }
+      `;
+      
+      const queryResult = await window.linera.request({
+        method: 'linera_graphqlQuery',
+        params: {
+          publicKey: connectedAccount.publicKey,
+          query: { query, variables: {} },
+          operationName: 'GetBalance'
+        }
+      }) as { data?: { balance?: string } } | null;
+      
+      const balanceStr = queryResult?.data?.balance || '0';
+      const formattedBalance = parseFloat(balanceStr) || 0;
+      
+      cachedBalance = {
+        balance: balanceStr,
+        formatted: formattedBalance,
+        hasBalance: formattedBalance > 0,
+        lastUpdated: Date.now()
+      };
+      
+      return cachedBalance;
+    } catch {
+      return { balance: '0', formatted: 0, hasBalance: false, lastUpdated: Date.now() };
+    }
+  }
+}
+
+export function clearBalanceCache(): void {
+  cachedBalance = null;
+}
+
+export async function checkSufficientBalance(requiredAmount: number): Promise<{
+  sufficient: boolean;
+  balance: number;
+  required: number;
+  message?: string;
+}> {
+  const walletBalance = await getWalletBalance();
+  
+  if (!walletBalance.hasBalance) {
+    return {
+      sufficient: false,
+      balance: walletBalance.formatted,
+      required: requiredAmount,
+      message: 'Your wallet has no balance. Please add funds to trade.'
+    };
+  }
+  
+  if (walletBalance.formatted < requiredAmount) {
+    return {
+      sufficient: false,
+      balance: walletBalance.formatted,
+      required: requiredAmount,
+      message: `Insufficient balance. You have ${walletBalance.formatted.toFixed(2)} but need ${requiredAmount.toFixed(2)}`
+    };
+  }
+  
+  return {
+    sufficient: true,
+    balance: walletBalance.formatted,
+    required: requiredAmount
+  };
 }
 
 export async function lineraGraphqlMutation(

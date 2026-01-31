@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
 import { useApi } from "../hooks/useApi";
+import {
+  detectLineraWallet,
+  connectLineraWallet,
+  isWalletConnected,
+  getWalletBalance,
+  checkSufficientBalance,
+  getConnectedAccount,
+  shortenAddress
+} from "../lib/linera-wallet";
 
 interface Oracle {
   id: number;
@@ -33,12 +42,25 @@ export default function Oracles() {
   const [form, setForm] = useState({ name: "", dataSource: "" });
   const [voteForm, setVoteForm] = useState({ marketId: 0, vote: 0, confidence: 100 });
   const [marketVotes, setMarketVotes] = useState<Record<number, OracleVote[]>>({});
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const api = useApi();
 
   useEffect(() => {
     fetchOracles();
     fetchMarkets();
+    checkWallet();
   }, []);
+
+  const checkWallet = async () => {
+    const account = getConnectedAccount();
+    if (account) {
+      setWalletAddress(account.publicKey);
+      const balance = await getWalletBalance();
+      setWalletBalance(balance.formatted);
+    }
+  };
 
   const fetchOracles = async () => {
     const data = await api.get("/api/oracles");
@@ -63,7 +85,33 @@ export default function Oracles() {
   const submitVote = async (oracleId: number) => {
     if (!voteForm.marketId) return;
     setVoting(true);
+    setBalanceError(null);
+    
     try {
+      const { installed } = detectLineraWallet();
+      
+      if (installed) {
+        if (!isWalletConnected()) {
+          const result = await connectLineraWallet();
+          if (result.success && result.address) {
+            setWalletAddress(result.address);
+          } else if (result.error) {
+            setBalanceError(result.error);
+            setVoting(false);
+            return;
+          }
+        }
+        
+        const balanceCheck = await checkSufficientBalance(0.01);
+        setWalletBalance(balanceCheck.balance);
+        
+        if (!balanceCheck.sufficient) {
+          setBalanceError(balanceCheck.message || "Insufficient balance to submit vote");
+          setVoting(false);
+          return;
+        }
+      }
+      
       await api.post(`/api/oracles/${oracleId}/vote`, {
         marketId: voteForm.marketId,
         vote: voteForm.vote,
@@ -74,6 +122,9 @@ export default function Oracles() {
       setVoteForm({ marketId: 0, vote: 0, confidence: 100 });
       await fetchOracles();
       await fetchMarkets();
+    } catch (err) {
+      const error = err as Error;
+      setBalanceError(error.message || "Vote submission failed");
     } finally {
       setVoting(false);
     }
@@ -288,13 +339,40 @@ export default function Oracles() {
       {showVote !== null && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="card max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold text-white mb-4">Submit Oracle Vote</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-white">Submit Oracle Vote</h2>
+              {walletAddress && (
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-bold ${walletBalance > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {walletBalance.toFixed(2)} LINERA
+                  </span>
+                  <span className="text-xs text-gray-400 font-mono">
+                    {shortenAddress(walletAddress, 4)}
+                  </span>
+                </div>
+              )}
+            </div>
+            
+            {balanceError && (
+              <div className="mb-4 p-3 rounded-lg text-sm bg-red-500/10 border border-red-500/30 text-red-400">
+                <p className="font-medium">{balanceError}</p>
+                {walletBalance === 0 && (
+                  <p className="text-xs mt-1 text-red-300">
+                    Get testnet tokens: faucet.testnet-conway.linera.net
+                  </p>
+                )}
+              </div>
+            )}
+            
             <div className="space-y-4">
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Select Market</label>
                 <select
                   value={voteForm.marketId}
-                  onChange={(e) => setVoteForm({ ...voteForm, marketId: parseInt(e.target.value) })}
+                  onChange={(e) => {
+                    setVoteForm({ ...voteForm, marketId: parseInt(e.target.value) });
+                    setBalanceError(null);
+                  }}
                   className="input w-full"
                 >
                   <option value={0}>Select a market...</option>
@@ -337,7 +415,10 @@ export default function Oracles() {
                 />
               </div>
               <div className="flex gap-2 pt-4">
-                <button onClick={() => setShowVote(null)} className="btn-secondary flex-1">
+                <button onClick={() => {
+                  setShowVote(null);
+                  setBalanceError(null);
+                }} className="btn-secondary flex-1">
                   Cancel
                 </button>
                 <button 
@@ -345,7 +426,7 @@ export default function Oracles() {
                   disabled={voting || !voteForm.marketId}
                   className="btn-primary flex-1"
                 >
-                  {voting ? "Submitting..." : "Submit Vote"}
+                  {voting ? "Checking..." : "Submit Vote"}
                 </button>
               </div>
             </div>

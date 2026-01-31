@@ -9,6 +9,9 @@ import {
   isWalletConnected,
   lineraGraphqlMutation,
   getWeb3Instance,
+  getWalletBalance,
+  checkSufficientBalance,
+  clearBalanceCache,
   PREDICTION_MARKET_APP_ID
 } from "../lib/linera-wallet";
 
@@ -44,6 +47,8 @@ export default function MarketDetail() {
   const [amount, setAmount] = useState("");
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [txStatus, setTxStatus] = useState<string | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
   const api = useApi();
 
   useEffect(() => {
@@ -57,6 +62,8 @@ export default function MarketDetail() {
     const account = getConnectedAccount();
     if (account) {
       setWalletAddress(account.publicKey);
+      const balance = await getWalletBalance();
+      setWalletBalance(balance.formatted);
     } else {
       const { installed } = detectLineraWallet();
       if (installed) {
@@ -66,12 +73,20 @@ export default function MarketDetail() {
             const accounts = await web3.eth.getAccounts();
             if (accounts.length > 0) {
               setWalletAddress(accounts[0]);
+              const balance = await getWalletBalance();
+              setWalletBalance(balance.formatted);
             }
           } catch {
           }
         }
       }
     }
+  };
+
+  const refreshBalance = async () => {
+    clearBalanceCache();
+    const balance = await getWalletBalance();
+    setWalletBalance(balance.formatted);
   };
 
   const fetchMarket = async () => {
@@ -82,8 +97,16 @@ export default function MarketDetail() {
   const executeTrade = async (isBuy: boolean) => {
     if (selectedOption === null || !amount) return;
     
+    const tradeAmount = parseFloat(amount);
+    if (isNaN(tradeAmount) || tradeAmount <= 0) {
+      setBalanceError("Please enter a valid amount");
+      setTimeout(() => setBalanceError(null), 3000);
+      return;
+    }
+    
     setTrading(true);
     setTxStatus(null);
+    setBalanceError(null);
     
     try {
       const { installed } = detectLineraWallet();
@@ -95,6 +118,7 @@ export default function MarketDetail() {
         if (result.success && result.address) {
           traderAddress = result.address;
           setWalletAddress(result.address);
+          await refreshBalance();
         } else if (result.error) {
           setTxStatus(result.error);
           setTimeout(() => setTxStatus(null), 3000);
@@ -104,7 +128,19 @@ export default function MarketDetail() {
       }
       
       if (traderAddress && isWalletConnected()) {
-        setTxStatus("🦎 Sending transaction to CheCko wallet...");
+        setTxStatus("Checking wallet balance...");
+        
+        const balanceCheck = await checkSufficientBalance(tradeAmount);
+        setWalletBalance(balanceCheck.balance);
+        
+        if (!balanceCheck.sufficient) {
+          setBalanceError(balanceCheck.message || "Insufficient balance");
+          setTxStatus(null);
+          setTrading(false);
+          return;
+        }
+        
+        setTxStatus("Sending transaction to CheCko wallet...");
         
         const marketId = parseInt(params?.id || "0");
         
@@ -317,16 +353,47 @@ export default function MarketDetail() {
             <div className="card bg-gray-800/30">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-medium text-white">Place Trade</h3>
-                {walletAddress && (
-                  <span className="text-xs text-green-400 font-mono bg-green-500/10 px-2 py-1 rounded">
-                    {shortenAddress(walletAddress, 6)}
-                  </span>
-                )}
+                <div className="flex items-center gap-3">
+                  {walletAddress && (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-400">Balance:</span>
+                        <span className={`text-xs font-bold ${walletBalance > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {walletBalance.toFixed(2)} LINERA
+                        </span>
+                        <button 
+                          onClick={refreshBalance}
+                          className="text-xs text-gray-500 hover:text-gray-300"
+                          title="Refresh balance"
+                        >
+                          ↻
+                        </button>
+                      </div>
+                      <span className="text-xs text-green-400 font-mono bg-green-500/10 px-2 py-1 rounded">
+                        {shortenAddress(walletAddress, 6)}
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
+              
+              {balanceError && (
+                <div className="mb-3 p-3 rounded-lg text-sm bg-red-500/10 border border-red-500/30 text-red-400 flex items-center gap-2">
+                  <span className="text-lg">⚠</span>
+                  <div>
+                    <p className="font-medium">{balanceError}</p>
+                    {walletBalance === 0 && (
+                      <p className="text-xs mt-1 text-red-300">
+                        Get testnet tokens from the faucet: faucet.testnet-conway.linera.net
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
               
               {txStatus && (
                 <div className={`mb-3 p-3 rounded-lg text-sm ${
-                  txStatus.includes('Sending') || txStatus.includes('Connecting') || txStatus.includes('submitted')
+                  txStatus.includes('Sending') || txStatus.includes('Connecting') || txStatus.includes('submitted') || txStatus.includes('Checking')
                     ? 'bg-yellow-500/10 border border-yellow-500/30 text-yellow-400'
                     : txStatus.includes('success') || txStatus.includes('executed') || txStatus.includes('finality')
                     ? 'bg-green-500/10 border border-green-500/30 text-green-400'
@@ -342,7 +409,10 @@ export default function MarketDetail() {
                 <input
                   type="number"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={(e) => {
+                    setAmount(e.target.value);
+                    setBalanceError(null);
+                  }}
                   placeholder="Amount"
                   className="input flex-1"
                   disabled={trading}
