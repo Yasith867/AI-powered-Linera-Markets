@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  linera-markets:
+    build: .
+    ports:
+      - "5173:5173"    # Frontend
+      - "8080:8080"    # Linera faucet / API
+      - "9001:9001"    # Localnet validator proxy
+      - "13001:13001"  # Localnet validator
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - AI_INTEGRATIONS_OPENAI_API_KEY=${AI_INTEGRATIONS_OPENAI_API_KEY}
+      - AI_INTEGRATIONS_OPENAI_BASE_URL=${AI_INTEGRATIONS_OPENAI_BASE_URL}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5173"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+volumes:
+  linera-data:
