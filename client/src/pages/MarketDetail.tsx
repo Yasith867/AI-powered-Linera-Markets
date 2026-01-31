@@ -63,6 +63,22 @@ export default function MarketDetail() {
     const { installed } = detectLineraWallet();
     if (!installed) return;
     
+    const web3 = getWeb3Instance();
+    if (web3) {
+      try {
+        const accounts = await web3.eth.getAccounts();
+        if (accounts && accounts.length > 0) {
+          setWalletAddress(accounts[0]);
+          await restoreWalletConnection();
+          const balance = await getWalletBalance();
+          setWalletBalance(balance.formatted);
+          return;
+        }
+      } catch (err) {
+        console.log('Failed to get accounts:', err);
+      }
+    }
+    
     let account = getConnectedAccount();
     if (!account) {
       const restored = await restoreWalletConnection();
@@ -75,19 +91,6 @@ export default function MarketDetail() {
       setWalletAddress(account.publicKey);
       const balance = await getWalletBalance();
       setWalletBalance(balance.formatted);
-    } else {
-      const web3 = getWeb3Instance();
-      if (web3) {
-        try {
-          const accounts = await web3.eth.getAccounts();
-          if (accounts.length > 0) {
-            setWalletAddress(accounts[0]);
-            const balance = await getWalletBalance();
-            setWalletBalance(balance.formatted);
-          }
-        } catch {
-        }
-      }
     }
   };
 
@@ -120,7 +123,7 @@ export default function MarketDetail() {
       const { installed } = detectLineraWallet();
       let traderAddress = walletAddress;
       
-      if (installed && !isWalletConnected()) {
+      if (installed && !traderAddress) {
         setTxStatus("Connecting to CheCko wallet...");
         const result = await connectLineraWallet();
         if (result.success && result.address) {
@@ -135,7 +138,8 @@ export default function MarketDetail() {
         }
       }
       
-      if (traderAddress && isWalletConnected()) {
+      if (traderAddress) {
+        await restoreWalletConnection();
         setTxStatus("Checking wallet balance...");
         
         const balanceCheck = await checkSufficientBalance(tradeAmount);
