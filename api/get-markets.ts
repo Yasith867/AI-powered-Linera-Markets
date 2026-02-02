@@ -13,7 +13,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const sql = neon(process.env.DATABASE_URL!);
     const markets = await sql`SELECT * FROM markets ORDER BY created_at DESC`;
-    return res.json(markets);
+    
+    // Transform snake_case to camelCase for frontend compatibility
+    const transformed = markets.map((m: any) => ({
+      id: m.id,
+      lineraChainId: m.linera_chain_id,
+      title: m.title,
+      description: m.description,
+      category: m.category,
+      options: m.options,
+      odds: m.odds,
+      totalVolume: m.total_volume,
+      liquidity: m.liquidity,
+      status: m.status,
+      resolvedOutcome: m.resolved_outcome,
+      eventTime: m.event_time,
+      createdBy: m.created_by,
+      createdAt: m.created_at,
+      resolvedAt: m.resolved_at,
+    }));
+    
+    return res.json(transformed);
   } catch (error: any) {
     console.error("Error:", error);
     res.status(500).json({ error: error.message || "Failed to fetch markets" });
