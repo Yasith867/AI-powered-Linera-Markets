@@ -1,0 +1,62 @@
+22:43:30.874 Running build in Washington, D.C., USA (East) – iad1
+22:43:30.878 Build machine configuration: 2 cores, 8 GB
+22:43:31.421 Cloning github.com/Yasith867/AI-powered-Linera-Markets (Branch: main, Commit: 5446079)
+22:43:31.423 Previous build caches not available.
+22:43:32.278 Cloning completed: 856.000ms
+22:43:32.949 Running "vercel build"
+22:43:33.939 Vercel CLI 50.9.6
+22:43:34.642 Running "install" command: `npm install`...
+22:43:39.411 npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+22:43:39.412 npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+22:43:44.923 
+22:43:44.924 added 498 packages, and audited 499 packages in 10s
+22:43:44.924 
+22:43:44.925 81 packages are looking for funding
+22:43:44.925   run `npm fund` for details
+22:43:44.956 
+22:43:44.957 7 vulnerabilities (5 moderate, 2 high)
+22:43:44.957 
+22:43:44.957 To address all issues (including breaking changes), run:
+22:43:44.957   npm audit fix --force
+22:43:44.957 
+22:43:44.957 Run `npm audit` for details.
+22:43:45.187 
+22:43:45.187 > linera-prediction-markets@1.0.0 build
+22:43:45.187 > vite build
+22:43:45.187 
+22:43:45.427 [36mvite v6.4.1 [32mbuilding for production...[36m[39m
+22:43:45.719 transforming...
+22:43:50.482 [32m✓[39m 972 modules transformed.
+22:43:51.247 rendering chunks...
+22:43:51.266 computing gzip size...
+22:43:51.300 [2m../dist/public/[22m[32mindex.html                 [39m[1m[2m    0.73 kB[22m[1m[22m[2m │ gzip:   0.42 kB[22m
+22:43:51.301 [2m../dist/public/[22m[2massets/[22m[35mindex-bEs7WHfS.css  [39m[1m[2m   40.16 kB[22m[1m[22m[2m │ gzip:   7.19 kB[22m
+22:43:51.306 [2m../dist/public/[22m[2massets/[22m[36mindex-BRiyAY3k.js   [39m[1m[33m1,157.13 kB[39m[22m[2m │ gzip: 334.50 kB[22m
+22:43:51.306 [32m✓ built in 5.85s[39m
+22:43:51.307 [33m
+22:43:51.307 (!) Some chunks are larger than 500 kB after minification. Consider:
+22:43:51.307 - Using dynamic import() to code-split the application
+22:43:51.307 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+22:43:51.307 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+22:43:51.394 Installing dependencies...
+22:43:52.341 
+22:43:52.341 up to date in 895ms
+22:43:52.341 
+22:43:52.342 81 packages are looking for funding
+22:43:52.342   run `npm fund` for details
+22:43:52.582 Using TypeScript 5.9.3 (local user-provided)
+22:43:59.891 Using TypeScript 5.9.3 (local user-provided)
+22:44:02.226 Using TypeScript 5.9.3 (local user-provided)
+22:44:03.831 Using TypeScript 5.9.3 (local user-provided)
+22:44:05.622 Using TypeScript 5.9.3 (local user-provided)
+22:44:07.238 Using TypeScript 5.9.3 (local user-provided)
+22:44:08.600 Using TypeScript 5.9.3 (local user-provided)
+22:44:10.268 Using TypeScript 5.9.3 (local user-provided)
+22:44:10.454 Using TypeScript 5.9.3 (local user-provided)
+22:44:10.666 Build Completed in /vercel/output [36s]
+22:44:11.085 Deploying outputs...
+22:44:17.875 Deployment completed
+22:44:18.779 Creating build cache...
+22:45:06.239 Created build cache: 47.455s
+22:45:06.240 Uploading build cache [73.38 MB]
+22:45:07.773 Build cache uploaded: 1.537s
