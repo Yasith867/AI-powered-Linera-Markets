@@ -7,10 +7,12 @@
     "dev:server": "tsx watch server/index.ts",
     "dev:client": "vite",
     "build": "vite build && esbuild server/index.ts --bundle --platform=node --outdir=dist --format=esm --packages=external",
+    "build:client": "vite build",
     "start": "node dist/index.js",
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
+    "@vercel/node": "^5.5.28",
     "@wallet-standard/core": "^1.1.1",
     "concurrently": "^9.2.1",
     "cors": "^2.8.6",
