@@ -6,7 +6,8 @@
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "tsx watch server/index.ts",
     "dev:client": "vite",
-    "build": "vite build && esbuild server/index.ts --bundle --platform=node --outdir=dist --format=esm --packages=external",
+    "build": "vite build",
+    "build:full": "vite build && esbuild server/index.ts --bundle --platform=node --outdir=dist --format=esm --packages=external",
     "build:client": "vite build",
     "start": "node dist/index.js",
     "db:push": "drizzle-kit push"
