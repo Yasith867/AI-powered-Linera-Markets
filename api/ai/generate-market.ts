@@ -31,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { category, context } = req.body;
 
     const response = await openai.chat.completions.create({
-      model: useCloudflare ? "@cf/meta/llama-3.1-8b-instruct" : "gpt-4o-mini",
+      model: useCloudflare ? "@cf/meta/llama-3-8b-instruct" : "gpt-4o-mini",
       messages: [
         {
           role: "system",
