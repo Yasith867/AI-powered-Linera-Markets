@@ -72,7 +72,7 @@ export default function Markets() {
   const generateAIMarket = async (category: string) => {
     setGenerating(true);
     try {
-      await api.post("/api/ai-generate", { category });
+      await api.post("/api/ai-create", { category });
       await fetchMarkets();
     } finally {
       setGenerating(false);

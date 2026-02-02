@@ -2,8 +2,6 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
 import { neon } from "@neondatabase/serverless";
 
-const sql = neon(process.env.DATABASE_URL!);
-
 const useCloudflare = !!process.env.CLOUDFLARE_API_KEY;
 
 const openai = new OpenAI({
@@ -29,6 +27,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    const sql = neon(process.env.DATABASE_URL!);
     const { category, context } = req.body;
 
     const response = await openai.chat.completions.create({
@@ -36,38 +35,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       messages: [
         {
           role: "system",
-          content: `You are an AI agent that creates prediction markets for the Linera blockchain. 
-Generate engaging, timely prediction markets based on current events. 
-Return valid JSON with the following structure:
+          content: `You are an AI that creates prediction markets. Return valid JSON:
 {
-  "title": "Clear question format ending with ?",
-  "description": "Brief context about the event and why it matters",
-  "category": "sports|crypto|politics|entertainment|technology",
-  "options": ["Option A", "Option B", ...],
+  "title": "Question ending with ?",
+  "description": "Brief context",
+  "category": "sports|crypto|politics|technology",
+  "options": ["Option A", "Option B"],
   "daysUntilResolution": 4
-}
-IMPORTANT: Markets should resolve within 4-5 days from creation. Set daysUntilResolution between 3 and 5.
-Focus on markets that:
-- Have clear binary or multiple-choice outcomes
-- Can be objectively verified
-- Are time-bound with clear resolution criteria
-- Are engaging and newsworthy`,
+}`,
         },
         {
           role: "user",
-          content: `Create a prediction market for category: ${category || "general"}. ${context ? `Context: ${context}` : ""}`,
+          content: `Create a prediction market for: ${category || "general"}. ${context || ""}`,
         },
       ],
       response_format: { type: "json_object" },
     });
 
     const marketData = JSON.parse(response.choices[0]?.message?.content || "{}");
-    
     const initialOdds = marketData.options.map(() => 1 / marketData.options.length);
-    
-    const daysUntilResolution = marketData.daysUntilResolution || 4;
     const eventTime = new Date();
-    eventTime.setDate(eventTime.getDate() + daysUntilResolution);
+    eventTime.setDate(eventTime.getDate() + (marketData.daysUntilResolution || 4));
     
     const result = await sql`
       INSERT INTO markets (title, description, category, options, odds, event_time, created_by)
@@ -75,14 +63,9 @@ Focus on markets that:
       RETURNING *
     `;
 
-    await sql`
-      INSERT INTO market_events (market_id, event_type, data)
-      VALUES (${result[0].id}, 'ai_market_created', ${JSON.stringify({ prompt: context, category })})
-    `;
-
     res.json(result[0]);
   } catch (error: any) {
-    console.error("Error generating AI market:", error);
+    console.error("Error:", error);
     res.status(500).json({ error: error.message || "Failed to generate market" });
   }
 }
