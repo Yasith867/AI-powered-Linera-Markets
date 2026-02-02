@@ -37,7 +37,7 @@ export default function Markets() {
   }, []);
 
   const fetchMarkets = async () => {
-    const data = await api.get("/api/markets");
+    const data = await api.get("/api/get-markets");
     if (data) setMarkets(data as Market[]);
   };
 
@@ -54,7 +54,7 @@ export default function Markets() {
     if (!form.title.trim()) return;
     setCreating(true);
     try {
-      await api.post("/api/markets", {
+      await api.post("/api/create-market", {
         title: form.title,
         description: form.description || `Custom prediction market: ${form.title}`,
         category: form.category,
