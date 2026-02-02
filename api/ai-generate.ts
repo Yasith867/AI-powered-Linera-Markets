@@ -3,9 +3,9 @@ import OpenAI from 'openai';
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { pgTable, serial, text, timestamp, real, jsonb, integer } from "drizzle-orm/pg-core";
-import { sql as sqlExpr } from 'drizzle-orm';
+import { sql as drizzleSql } from 'drizzle-orm';
 
-const sql = neon(process.env.DATABASE_URL!);
+const neonClient = neon(process.env.DATABASE_URL!);
 
 const markets = pgTable("markets", {
   id: serial("id").primaryKey(),
@@ -21,7 +21,7 @@ const markets = pgTable("markets", {
   resolvedOutcome: integer("resolved_outcome"),
   eventTime: timestamp("event_time"),
   createdBy: text("created_by").default("ai_agent").notNull(),
-  createdAt: timestamp("created_at").default(sqlExpr`CURRENT_TIMESTAMP`).notNull(),
+  createdAt: timestamp("created_at").default(drizzleSql`CURRENT_TIMESTAMP`).notNull(),
   resolvedAt: timestamp("resolved_at"),
 });
 
@@ -30,10 +30,10 @@ const marketEvents = pgTable("market_events", {
   marketId: integer("market_id").notNull(),
   eventType: text("event_type").notNull(),
   data: jsonb("data"),
-  createdAt: timestamp("created_at").default(sqlExpr`CURRENT_TIMESTAMP`).notNull(),
+  createdAt: timestamp("created_at").default(drizzleSql`CURRENT_TIMESTAMP`).notNull(),
 });
 
-const db = drizzle(sql);
+const db = drizzle(neonClient);
 
 const useCloudflare = !!process.env.CLOUDFLARE_API_KEY;
 

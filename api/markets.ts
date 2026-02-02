@@ -1,10 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
-import { desc, sql as sqlExpr } from 'drizzle-orm';
+import { desc, sql as drizzleSql } from 'drizzle-orm';
 import { pgTable, serial, text, timestamp, real, jsonb, integer } from "drizzle-orm/pg-core";
 
-const sql = neon(process.env.DATABASE_URL!);
+const neonClient = neon(process.env.DATABASE_URL!);
 
 const markets = pgTable("markets", {
   id: serial("id").primaryKey(),
@@ -20,7 +20,7 @@ const markets = pgTable("markets", {
   resolvedOutcome: integer("resolved_outcome"),
   eventTime: timestamp("event_time"),
   createdBy: text("created_by").default("ai_agent").notNull(),
-  createdAt: timestamp("created_at").default(sqlExpr`CURRENT_TIMESTAMP`).notNull(),
+  createdAt: timestamp("created_at").default(drizzleSql`CURRENT_TIMESTAMP`).notNull(),
   resolvedAt: timestamp("resolved_at"),
 });
 
@@ -29,10 +29,10 @@ const marketEvents = pgTable("market_events", {
   marketId: integer("market_id").notNull(),
   eventType: text("event_type").notNull(),
   data: jsonb("data"),
-  createdAt: timestamp("created_at").default(sqlExpr`CURRENT_TIMESTAMP`).notNull(),
+  createdAt: timestamp("created_at").default(drizzleSql`CURRENT_TIMESTAMP`).notNull(),
 });
 
-const db = drizzle(sql);
+const db = drizzle(neonClient);
 
 const APP_ID = process.env.LINERA_APP_ID || process.env.VITE_LINERA_APP_ID || '';
 const CHAIN_ID = process.env.LINERA_CHAIN_ID || process.env.VITE_LINERA_CHAIN_ID || '';
