@@ -3,8 +3,15 @@ import OpenAI from 'openai';
 import { db } from '../_db';
 import { markets, marketEvents } from '../../shared/schema';
 
+const useCloudflare = !!process.env.CLOUDFLARE_API_KEY;
+
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: useCloudflare 
+    ? process.env.CLOUDFLARE_API_KEY 
+    : process.env.OPENAI_API_KEY,
+  baseURL: useCloudflare 
+    ? `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`
+    : undefined,
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -24,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { category, context } = req.body;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: useCloudflare ? "@cf/meta/llama-3.1-8b-instruct" : "gpt-4o-mini",
       messages: [
         {
           role: "system",
