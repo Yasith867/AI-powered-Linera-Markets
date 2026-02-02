@@ -13,6 +13,7 @@
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
     "@vercel/node": "^5.5.28",
     "@wallet-standard/core": "^1.1.1",
     "concurrently": "^9.2.1",
