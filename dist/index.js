@@ -7,6 +7,8 @@ var __export = (target, all) => {
 // server/index.ts
 import express from "express";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 import { WebSocketServer, WebSocket } from "ws";
 import { createServer } from "http";
 
@@ -1039,6 +1041,7 @@ lineraRoutes.post("/message", async (req, res) => {
 
 // server/index.ts
 import { eq as eq5, lt, and as and2, isNotNull } from "drizzle-orm";
+var __dirname = path.dirname(fileURLToPath(import.meta.url));
 var app = express();
 var server = createServer(app);
 var wss = new WebSocketServer({ server, path: "/ws" });
@@ -1078,6 +1081,35 @@ app.use("/api/linera", lineraRoutes);
 app.get("/api/health", (_, res) => {
   res.json({ status: "ok", timestamp: (/* @__PURE__ */ new Date()).toISOString() });
 });
+app.get("/api/get-markets", async (_, res) => {
+  try {
+    const result = await db.select().from(markets);
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching markets:", error);
+    res.status(500).json({ error: "Failed to fetch markets" });
+  }
+});
+app.post("/api/create-market", async (req, res) => {
+  try {
+    const { title, description, category, options, eventTime } = req.body;
+    const initialOdds = options.map(() => 1 / options.length);
+    const result = await db.insert(markets).values({
+      title,
+      description,
+      category: category || "general",
+      options,
+      odds: initialOdds,
+      eventTime: eventTime ? new Date(eventTime) : null,
+      createdBy: "user"
+    }).returning();
+    broadcast5({ type: "market_created", data: result[0] });
+    res.json(result[0]);
+  } catch (error) {
+    console.error("Error creating market:", error);
+    res.status(500).json({ error: "Failed to create market" });
+  }
+});
 app.get("/api/linera-stats", (_, res) => {
   res.json(getLineraStats());
 });
@@ -1109,8 +1141,15 @@ async function checkExpiredMarkets() {
   }
 }
 setInterval(checkExpiredMarkets, 1e4);
-var PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
+var publicPath = path.join(__dirname, "../public");
+app.use(express.static(publicPath));
+app.get("*", (req, res) => {
+  if (!req.path.startsWith("/api")) {
+    res.sendFile(path.join(publicPath, "index.html"));
+  }
+});
+var PORT = process.env.PORT || 5e3;
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
   checkExpiredMarkets();
 });

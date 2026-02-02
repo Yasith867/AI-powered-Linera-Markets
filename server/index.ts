@@ -1,7 +1,11 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 import { WebSocketServer, WebSocket } from "ws";
 import { createServer } from "http";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import { marketRoutes, setBroadcast as setMarketBroadcast } from "./routes/markets";
 import { oracleRoutes, setBroadcast as setOracleBroadcast } from "./routes/oracles";
 import { botRoutes, setBroadcast as setBotBroadcast } from "./routes/bots";
@@ -136,8 +140,19 @@ async function checkExpiredMarkets() {
 
 setInterval(checkExpiredMarkets, 10000);
 
-const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
+// Serve static files in production
+const publicPath = path.join(__dirname, "../public");
+app.use(express.static(publicPath));
+
+// SPA fallback - serve index.html for all non-API routes
+app.get("*", (req, res) => {
+  if (!req.path.startsWith("/api")) {
+    res.sendFile(path.join(publicPath, "index.html"));
+  }
+});
+
+const PORT = parseInt(process.env.PORT || (process.env.NODE_ENV === "production" ? "5000" : "3001"), 10);
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
   checkExpiredMarkets();
 });
