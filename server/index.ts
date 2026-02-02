@@ -62,6 +62,38 @@ app.get("/api/health", (_, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
+// Vercel-compatible routes (also work locally)
+app.get("/api/get-markets", async (_, res) => {
+  try {
+    const result = await db.select().from(markets);
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching markets:", error);
+    res.status(500).json({ error: "Failed to fetch markets" });
+  }
+});
+
+app.post("/api/create-market", async (req, res) => {
+  try {
+    const { title, description, category, options, eventTime } = req.body;
+    const initialOdds = options.map(() => 1 / options.length);
+    const result = await db.insert(markets).values({
+      title,
+      description,
+      category: category || "general",
+      options,
+      odds: initialOdds,
+      eventTime: eventTime ? new Date(eventTime) : null,
+      createdBy: "user",
+    }).returning();
+    broadcast({ type: "market_created", data: result[0] });
+    res.json(result[0]);
+  } catch (error) {
+    console.error("Error creating market:", error);
+    res.status(500).json({ error: "Failed to create market" });
+  }
+});
+
 app.get("/api/linera-stats", (_, res) => {
   res.json(lineraClient.getLineraStats());
 });
