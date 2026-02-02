@@ -1,39 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
 import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
-import { pgTable, serial, text, timestamp, real, jsonb, integer } from "drizzle-orm/pg-core";
-import { sql as drizzleSql } from 'drizzle-orm';
 
-const neonSql = neon(process.env.DATABASE_URL!);
-
-const markets = pgTable("markets", {
-  id: serial("id").primaryKey(),
-  lineraChainId: text("linera_chain_id"),
-  title: text("title").notNull(),
-  description: text("description").notNull(),
-  category: text("category").notNull(),
-  options: jsonb("options").$type<string[]>().notNull(),
-  odds: jsonb("odds").$type<number[]>().notNull(),
-  totalVolume: real("total_volume").default(0).notNull(),
-  liquidity: real("liquidity").default(1000).notNull(),
-  status: text("status").default("active").notNull(),
-  resolvedOutcome: integer("resolved_outcome"),
-  eventTime: timestamp("event_time"),
-  createdBy: text("created_by").default("ai_agent").notNull(),
-  createdAt: timestamp("created_at").default(drizzleSql`CURRENT_TIMESTAMP`).notNull(),
-  resolvedAt: timestamp("resolved_at"),
-});
-
-const marketEvents = pgTable("market_events", {
-  id: serial("id").primaryKey(),
-  marketId: integer("market_id").notNull(),
-  eventType: text("event_type").notNull(),
-  data: jsonb("data"),
-  createdAt: timestamp("created_at").default(drizzleSql`CURRENT_TIMESTAMP`).notNull(),
-});
-
-const db = drizzle({ client: neonSql });
+const sql = neon(process.env.DATABASE_URL!);
 
 const useCloudflare = !!process.env.CLOUDFLARE_API_KEY;
 
@@ -100,23 +69,18 @@ Focus on markets that:
     const eventTime = new Date();
     eventTime.setDate(eventTime.getDate() + daysUntilResolution);
     
-    const [market] = await db.insert(markets).values({
-      title: marketData.title,
-      description: marketData.description,
-      category: marketData.category || category || "general",
-      options: marketData.options,
-      odds: initialOdds,
-      eventTime: eventTime,
-      createdBy: "ai_agent",
-    }).returning();
+    const result = await sql`
+      INSERT INTO markets (title, description, category, options, odds, event_time, created_by)
+      VALUES (${marketData.title}, ${marketData.description}, ${marketData.category || category || "general"}, ${JSON.stringify(marketData.options)}, ${JSON.stringify(initialOdds)}, ${eventTime.toISOString()}, 'ai_agent')
+      RETURNING *
+    `;
 
-    await db.insert(marketEvents).values({
-      marketId: market.id,
-      eventType: "ai_market_created",
-      data: { prompt: context, category },
-    });
+    await sql`
+      INSERT INTO market_events (market_id, event_type, data)
+      VALUES (${result[0].id}, 'ai_market_created', ${JSON.stringify({ prompt: context, category })})
+    `;
 
-    res.json(market);
+    res.json(result[0]);
   } catch (error: any) {
     console.error("Error generating AI market:", error);
     res.status(500).json({ error: error.message || "Failed to generate market" });
