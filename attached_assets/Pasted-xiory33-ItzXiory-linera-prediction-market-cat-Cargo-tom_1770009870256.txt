@@ -1,0 +1,524 @@
+xiory33@ItzXiory:~/linera-prediction-market$ cat > Cargo.toml << 'EOF'
+[package]
+name = "prediction-market"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "prediction-market_contract"
+path = "src/contract.rs"
+
+[[bin]]
+name = "prediction-market_service"
+path = "src/service.rs"
+
+[dependencies]
+linera-sdk = "0.15.11"
+serde = { version = "1.0", features = ["derive"] }
+async-trait = "0.1"
+EOF
+xiory33@ItzXiory:~/linera-prediction-market$ cargo build --release --target wasm32-unknown-unknown
+   Compiling prediction-market v0.1.0 (/home/xiory33/linera-prediction-market)
+error[E0277]: the trait bound `PredictionMarketContract: WithContractAbi` is not satisfied
+   --> src/contract.rs:25:5
+    |
+ 25 |     async fn execute_operation(&mut self, op: Operation) -> Self::Response {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `WithContractAbi` is not implemented for `PredictionMarketContract`
+   --> src/contract.rs:6:1
+    |
+  6 | pub struct PredictionMarketContract {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: the following other types implement trait `ContractAbi`
+   --> /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/abis/controller.rs:16:1
+    |
+ 16 | impl ContractAbi for ControllerAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `ControllerAbi`
+    |
+   ::: /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/abis/evm.rs:14:1
+    |
+ 14 | impl ContractAbi for EvmAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ `EvmAbi`
+    |
+   ::: /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/abis/fungible.rs:52:1
+    |
+ 52 | impl ContractAbi for NativeFungibleTokenAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `NativeFungibleTokenAbi`
+...
+117 | impl ContractAbi for FungibleTokenAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FungibleTokenAbi`
+    = note: required for `PredictionMarketContract` to implement `ContractAbi`
+
+error[E0277]: the trait bound `PredictionMarketService: WithServiceAbi` is not satisfied
+   --> src/service.rs:19:5
+    |
+ 19 |     async fn handle_query(&self, _query: Self::Query) -> Self::QueryResponse {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `WithServiceAbi` is not implemented for `PredictionMarketService`
+   --> src/service.rs:6:1
+    |
+  6 | pub struct PredictionMarketService {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: the following other types implement trait `ServiceAbi`
+   --> /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/abis/controller.rs:21:1
+    |
+ 21 | impl ServiceAbi for ControllerAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `ControllerAbi`
+    |
+   ::: /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/abis/evm.rs:35:1
+    |
+ 35 | impl ServiceAbi for EvmAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^ `EvmAbi`
+    |
+   ::: /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/abis/fungible.rs:57:1
+    |
+ 57 | impl ServiceAbi for NativeFungibleTokenAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `NativeFungibleTokenAbi`
+...
+122 | impl ServiceAbi for FungibleTokenAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FungibleTokenAbi`
+    = note: required for `PredictionMarketService` to implement `ServiceAbi`
+
+error[E0277]: the trait bound `PredictionMarketContract: WithContractAbi` is not satisfied
+   --> /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/lib.rs:114:54
+    |
+114 |     async fn execute_operation(&mut self, operation: Self::Operation) -> Self::Response;
+    |                                                      ^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `WithContractAbi` is not implemented for `PredictionMarketContract`
+   --> src/contract.rs:6:1
+    |
+  6 | pub struct PredictionMarketContract {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: the following other types implement trait `ContractAbi`
+   --> /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/abis/controller.rs:16:1
+    |
+ 16 | impl ContractAbi for ControllerAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `ControllerAbi`
+    |
+   ::: /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/abis/evm.rs:14:1
+    |
+ 14 | impl ContractAbi for EvmAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ `EvmAbi`
+    |
+   ::: /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/abis/fungible.rs:52:1
+    |
+ 52 | impl ContractAbi for NativeFungibleTokenAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `NativeFungibleTokenAbi`
+...
+117 | impl ContractAbi for FungibleTokenAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FungibleTokenAbi`
+    = note: required for `PredictionMarketContract` to implement `ContractAbi`
+
+error[E0277]: the trait bound `PredictionMarketService: WithServiceAbi` is not satisfied
+   --> /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/lib.rs:145:41
+    |
+145 |     async fn handle_query(&self, query: Self::Query) -> Self::QueryResponse;
+    |                                         ^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `WithServiceAbi` is not implemented for `PredictionMarketService`
+   --> src/service.rs:6:1
+    |
+  6 | pub struct PredictionMarketService {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: the following other types implement trait `ServiceAbi`
+   --> /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/abis/controller.rs:21:1
+    |
+ 21 | impl ServiceAbi for ControllerAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `ControllerAbi`
+    |
+   ::: /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/abis/evm.rs:35:1
+    |
+ 35 | impl ServiceAbi for EvmAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^ `EvmAbi`
+    |
+   ::: /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/abis/fungible.rs:57:1
+    |
+ 57 | impl ServiceAbi for NativeFungibleTokenAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `NativeFungibleTokenAbi`
+...
+122 | impl ServiceAbi for FungibleTokenAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FungibleTokenAbi`
+    = note: required for `PredictionMarketService` to implement `ServiceAbi`
+
+error[E0277]: the trait bound `PredictionMarketService: WithServiceAbi` is not satisfied
+   --> src/service.rs:12:18
+    |
+ 12 | impl Service for PredictionMarketService {
+    |                  ^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `WithServiceAbi` is not implemented for `PredictionMarketService`
+   --> src/service.rs:6:1
+    |
+  6 | pub struct PredictionMarketService {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: required by a bound in `linera_sdk::Service`
+   --> /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/lib.rs:137:20
+    |
+137 | pub trait Service: WithServiceAbi + ServiceAbi + Sized {
+    |                    ^^^^^^^^^^^^^^ required by this bound in `Service`
+
+error[E0277]: the trait bound `PredictionMarketService: WithServiceAbi` is not satisfied
+   --> src/service.rs:19:42
+    |
+ 19 |     async fn handle_query(&self, _query: Self::Query) -> Self::QueryResponse {
+    |                                          ^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `WithServiceAbi` is not implemented for `PredictionMarketService`
+   --> src/service.rs:6:1
+    |
+  6 | pub struct PredictionMarketService {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: the following other types implement trait `ServiceAbi`
+   --> /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/abis/controller.rs:21:1
+    |
+ 21 | impl ServiceAbi for ControllerAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `ControllerAbi`
+    |
+   ::: /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/abis/evm.rs:35:1
+    |
+ 35 | impl ServiceAbi for EvmAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^ `EvmAbi`
+    |
+   ::: /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/abis/fungible.rs:57:1
+    |
+ 57 | impl ServiceAbi for NativeFungibleTokenAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `NativeFungibleTokenAbi`
+...
+122 | impl ServiceAbi for FungibleTokenAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FungibleTokenAbi`
+    = note: required for `PredictionMarketService` to implement `ServiceAbi`
+
+error[E0046]: not all trait items implemented, missing: `EventValue`
+  --> src/contract.rs:13:1
+   |
+13 | impl Contract for PredictionMarketContract {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `EventValue` in implementation
+   |
+   = help: implement the missing item: `type EventValue = /* Type */;`
+
+error[E0277]: the trait bound `PredictionMarketContract: WithContractAbi` is not satisfied
+  --> src/contract.rs:13:19
+   |
+13 | impl Contract for PredictionMarketContract {
+   |                   ^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+   |
+help: the trait `WithContractAbi` is not implemented for `PredictionMarketContract`
+  --> src/contract.rs:6:1
+   |
+ 6 | pub struct PredictionMarketContract {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: required by a bound in `Contract`
+  --> /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/lib.rs:93:21
+   |
+93 | pub trait Contract: WithContractAbi + ContractAbi + Sized {
+   |                     ^^^^^^^^^^^^^^^ required by this bound in `Contract`
+
+error[E0277]: the trait bound `PredictionMarketService: WithServiceAbi` is not satisfied
+  --> src/service.rs:15:58
+   |
+15 |       async fn new(_runtime: ServiceRuntime<Self>) -> Self {
+   |  __________________________________________________________^
+16 | |         Self { state: PredictionMarketState::default() }
+17 | |     }
+   | |_____^ unsatisfied trait bound
+   |
+help: the trait `WithServiceAbi` is not implemented for `PredictionMarketService`
+  --> src/service.rs:6:1
+   |
+ 6 | pub struct PredictionMarketService {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0277]: the trait bound `PredictionMarketService: WithServiceAbi` is not satisfied
+  --> src/service.rs:15:18
+   |
+15 |     async fn new(_runtime: ServiceRuntime<Self>) -> Self {
+   |                  ^^^^^^^^ unsatisfied trait bound
+   |
+help: the trait `WithServiceAbi` is not implemented for `PredictionMarketService`
+  --> src/service.rs:6:1
+   |
+ 6 | pub struct PredictionMarketService {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0277]: the trait bound `PredictionMarketContract: WithContractAbi` is not satisfied
+  --> src/contract.rs:18:59
+   |
+18 |       async fn load(runtime: ContractRuntime<Self>) -> Self {
+   |  ___________________________________________________________^
+19 | |         let state = PredictionMarketState::default();
+20 | |         Self { state, runtime }
+21 | |     }
+   | |_____^ unsatisfied trait bound
+   |
+help: the trait `WithContractAbi` is not implemented for `PredictionMarketContract`
+  --> src/contract.rs:6:1
+   |
+ 6 | pub struct PredictionMarketContract {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0277]: the trait bound `PredictionMarketContract: WithContractAbi` is not satisfied
+  --> src/contract.rs:18:19
+   |
+18 |     async fn load(runtime: ContractRuntime<Self>) -> Self {
+   |                   ^^^^^^^ unsatisfied trait bound
+   |
+help: the trait `WithContractAbi` is not implemented for `PredictionMarketContract`
+  --> src/contract.rs:6:1
+   |
+ 6 | pub struct PredictionMarketContract {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0277]: the trait bound `PredictionMarketService: WithServiceAbi` is not satisfied
+   --> src/service.rs:10:1
+    |
+ 10 | linera_sdk::service!(PredictionMarketService);
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `WithServiceAbi` is not implemented for `PredictionMarketService`
+   --> src/service.rs:6:1
+    |
+  6 | pub struct PredictionMarketService {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: the following other types implement trait `ServiceAbi`
+   --> /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/abis/controller.rs:21:1
+    |
+ 21 | impl ServiceAbi for ControllerAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `ControllerAbi`
+    |
+   ::: /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/abis/evm.rs:35:1
+    |
+ 35 | impl ServiceAbi for EvmAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^ `EvmAbi`
+    |
+   ::: /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/abis/fungible.rs:57:1
+    |
+ 57 | impl ServiceAbi for NativeFungibleTokenAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `NativeFungibleTokenAbi`
+...
+122 | impl ServiceAbi for FungibleTokenAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FungibleTokenAbi`
+    = note: required for `PredictionMarketService` to implement `ServiceAbi`
+    = note: this error originates in the macro `linera_sdk::service` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `PredictionMarketContract: WithContractAbi` is not satisfied
+  --> src/contract.rs:59:26
+   |
+59 |     async fn store(self) {}
+   |                          ^^ unsatisfied trait bound
+   |
+help: the trait `WithContractAbi` is not implemented for `PredictionMarketContract`
+  --> src/contract.rs:6:1
+   |
+ 6 | pub struct PredictionMarketContract {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0277]: the trait bound `PredictionMarketContract: WithContractAbi` is not satisfied
+  --> src/contract.rs:59:20
+   |
+59 |     async fn store(self) {}
+   |                    ^^^^ unsatisfied trait bound
+   |
+help: the trait `WithContractAbi` is not implemented for `PredictionMarketContract`
+  --> src/contract.rs:6:1
+   |
+ 6 | pub struct PredictionMarketContract {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0277]: the trait bound `PredictionMarketContract: WithContractAbi` is not satisfied
+  --> src/contract.rs:11:1
+   |
+11 | linera_sdk::contract!(PredictionMarketContract);
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+   |
+help: the trait `WithContractAbi` is not implemented for `PredictionMarketContract`
+  --> src/contract.rs:6:1
+   |
+ 6 | pub struct PredictionMarketContract {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = note: this error originates in the macro `linera_sdk::contract` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `PredictionMarketContract: WithContractAbi` is not satisfied
+   --> src/contract.rs:11:1
+    |
+ 11 | linera_sdk::contract!(PredictionMarketContract);
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `WithContractAbi` is not implemented for `PredictionMarketContract`
+   --> src/contract.rs:6:1
+    |
+  6 | pub struct PredictionMarketContract {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: required by a bound in `linera_sdk::Contract::instantiate`
+   --> /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/lib.rs:93:21
+    |
+ 93 | pub trait Contract: WithContractAbi + ContractAbi + Sized {
+    |                     ^^^^^^^^^^^^^^^ required by this bound in `Contract::instantiate`
+...
+111 |     async fn instantiate(&mut self, argument: Self::InstantiationArgument);
+    |              ----------- required by a bound in this associated function
+    = note: this error originates in the macro `linera_sdk::contract` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `PredictionMarketContract: WithContractAbi` is not satisfied
+   --> src/contract.rs:11:1
+    |
+ 11 | linera_sdk::contract!(PredictionMarketContract);
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `WithContractAbi` is not implemented for `PredictionMarketContract`
+   --> src/contract.rs:6:1
+    |
+  6 | pub struct PredictionMarketContract {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: the following other types implement trait `ContractAbi`
+   --> /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/abis/controller.rs:16:1
+    |
+ 16 | impl ContractAbi for ControllerAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `ControllerAbi`
+    |
+   ::: /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/abis/evm.rs:14:1
+    |
+ 14 | impl ContractAbi for EvmAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ `EvmAbi`
+    |
+   ::: /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/abis/fungible.rs:52:1
+    |
+ 52 | impl ContractAbi for NativeFungibleTokenAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `NativeFungibleTokenAbi`
+...
+117 | impl ContractAbi for FungibleTokenAbi {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FungibleTokenAbi`
+    = note: required for `PredictionMarketContract` to implement `ContractAbi`
+    = note: this error originates in the macro `linera_sdk::contract` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function depends on never type fallback being `()`
+  --> src/service.rs:10:1
+   |
+10 | linera_sdk::service!(PredictionMarketService);
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in Rust 2024 and in a future release in all editions!
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/never-type-fallback.html>
+   = help: specify the types explicitly
+note: in edition 2024, the requirement `!: serde_core::de::Deserialize<'_>` will fail
+  --> src/service.rs:10:1
+   |
+10 | linera_sdk::service!(PredictionMarketService);
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = note: `#[deny(dependency_on_unit_never_type_fallback)]` (part of `#[deny(rust_2024_compatibility)]`) on by default
+   = note: this error originates in the macro `linera_sdk::service` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `PredictionMarketContract: WithContractAbi` is not satisfied
+  --> src/contract.rs:11:1
+   |
+11 | linera_sdk::contract!(PredictionMarketContract);
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+   |
+help: the trait `WithContractAbi` is not implemented for `PredictionMarketContract`
+  --> src/contract.rs:6:1
+   |
+ 6 | pub struct PredictionMarketContract {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: required by a bound in `linera_sdk::Contract::Message`
+  --> /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/lib.rs:93:21
+   |
+93 | pub trait Contract: WithContractAbi + ContractAbi + Sized {
+   |                     ^^^^^^^^^^^^^^^ required by this bound in `Contract::Message`
+94 |     /// The type of message executed by the application.
+95 |     type Message: Serialize + DeserializeOwned + Debug;
+   |          ------- required by a bound in this associated type
+   = note: this error originates in the macro `linera_sdk::contract` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `PredictionMarketContract: WithContractAbi` is not satisfied
+   --> src/contract.rs:11:1
+    |
+ 11 | linera_sdk::contract!(PredictionMarketContract);
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `WithContractAbi` is not implemented for `PredictionMarketContract`
+   --> src/contract.rs:6:1
+    |
+  6 | pub struct PredictionMarketContract {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: required by a bound in `linera_sdk::Contract::execute_message`
+   --> /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/lib.rs:93:21
+    |
+ 93 | pub trait Contract: WithContractAbi + ContractAbi + Sized {
+    |                     ^^^^^^^^^^^^^^^ required by this bound in `Contract::execute_message`
+...
+117 |     async fn execute_message(&mut self, message: Self::Message);
+    |              --------------- required by a bound in this associated function
+    = note: this error originates in the macro `linera_sdk::contract` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `PredictionMarketContract: WithContractAbi` is not satisfied
+   --> src/contract.rs:11:1
+    |
+ 11 | linera_sdk::contract!(PredictionMarketContract);
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `WithContractAbi` is not implemented for `PredictionMarketContract`
+   --> src/contract.rs:6:1
+    |
+  6 | pub struct PredictionMarketContract {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: required by a bound in `linera_sdk::Contract::process_streams`
+   --> /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/lib.rs:93:21
+    |
+ 93 | pub trait Contract: WithContractAbi + ContractAbi + Sized {
+    |                     ^^^^^^^^^^^^^^^ required by this bound in `Contract::process_streams`
+...
+123 |     async fn process_streams(&mut self, _updates: Vec<StreamUpdate>) {}
+    |              --------------- required by a bound in this associated function
+    = note: this error originates in the macro `linera_sdk::contract` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `PredictionMarketContract: WithContractAbi` is not satisfied
+  --> src/contract.rs:11:1
+   |
+11 | linera_sdk::contract!(PredictionMarketContract);
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+   |
+help: the trait `WithContractAbi` is not implemented for `PredictionMarketContract`
+  --> src/contract.rs:6:1
+   |
+ 6 | pub struct PredictionMarketContract {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: required by a bound in `Contract`
+  --> /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/lib.rs:93:21
+   |
+93 | pub trait Contract: WithContractAbi + ContractAbi + Sized {
+   |                     ^^^^^^^^^^^^^^^ required by this bound in `Contract`
+   = note: this error originates in the macro `linera_sdk::contract` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `PredictionMarketContract: WithContractAbi` is not satisfied
+   --> src/contract.rs:11:1
+    |
+ 11 | linera_sdk::contract!(PredictionMarketContract);
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `WithContractAbi` is not implemented for `PredictionMarketContract`
+   --> src/contract.rs:6:1
+    |
+  6 | pub struct PredictionMarketContract {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: required by a bound in `linera_sdk::Contract::store`
+   --> /home/xiory33/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linera-sdk-0.15.11/src/lib.rs:93:21
+    |
+ 93 | pub trait Contract: WithContractAbi + ContractAbi + Sized {
+    |                     ^^^^^^^^^^^^^^^ required by this bound in `Contract::store`
+...
+126 |     async fn store(self);
+    |              ----- required by a bound in this associated function
+    = note: this error originates in the macro `linera_sdk::contract` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+For more information about this error, try `rustc --explain E0277`.
+Some errors have detailed explanations: E0046, E0277.
+For more information about an error, try `rustc --explain E0046`.
+error: could not compile `prediction-market` (bin "prediction-market_service") due to 10 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `prediction-market` (bin "prediction-market_contract") due to 19 previous errors
+xiory33@ItzXiory:~/linera-prediction-market$
