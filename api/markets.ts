@@ -4,7 +4,7 @@ import { drizzle } from "drizzle-orm/neon-http";
 import { desc, sql as drizzleSql } from 'drizzle-orm';
 import { pgTable, serial, text, timestamp, real, jsonb, integer } from "drizzle-orm/pg-core";
 
-const neonClient = neon(process.env.DATABASE_URL!);
+const neonSql = neon(process.env.DATABASE_URL!);
 
 const markets = pgTable("markets", {
   id: serial("id").primaryKey(),
@@ -32,7 +32,7 @@ const marketEvents = pgTable("market_events", {
   createdAt: timestamp("created_at").default(drizzleSql`CURRENT_TIMESTAMP`).notNull(),
 });
 
-const db = drizzle(neonClient);
+const db = drizzle({ client: neonSql });
 
 const APP_ID = process.env.LINERA_APP_ID || process.env.VITE_LINERA_APP_ID || '';
 const CHAIN_ID = process.env.LINERA_CHAIN_ID || process.env.VITE_LINERA_CHAIN_ID || '';

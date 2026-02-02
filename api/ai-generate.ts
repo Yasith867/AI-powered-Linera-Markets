@@ -5,7 +5,7 @@ import { drizzle } from "drizzle-orm/neon-http";
 import { pgTable, serial, text, timestamp, real, jsonb, integer } from "drizzle-orm/pg-core";
 import { sql as drizzleSql } from 'drizzle-orm';
 
-const neonClient = neon(process.env.DATABASE_URL!);
+const neonSql = neon(process.env.DATABASE_URL!);
 
 const markets = pgTable("markets", {
   id: serial("id").primaryKey(),
@@ -33,7 +33,7 @@ const marketEvents = pgTable("market_events", {
   createdAt: timestamp("created_at").default(drizzleSql`CURRENT_TIMESTAMP`).notNull(),
 });
 
-const db = drizzle(neonClient);
+const db = drizzle({ client: neonSql });
 
 const useCloudflare = !!process.env.CLOUDFLARE_API_KEY;
 
