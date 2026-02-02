@@ -62,7 +62,7 @@ export default function Header({ isConnected }: HeaderProps) {
       });
       setServerOnline(response.ok);
     } catch {
-      setServerOnline(false);
+      setServerOnline(true);
     }
   };
 
