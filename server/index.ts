@@ -102,6 +102,56 @@ app.get("/api/linera-stats", (_, res) => {
   res.json(lineraClient.getLineraStats());
 });
 
+// Single market endpoint for Vercel compatibility
+app.get("/api/get-market", async (req, res) => {
+  const { id } = req.query;
+  if (!id) {
+    return res.status(400).json({ error: 'Market ID required' });
+  }
+  try {
+    const result = await db.select().from(markets).where(eq(markets.id, Number(id)));
+    if (result.length === 0) {
+      return res.status(404).json({ error: 'Market not found' });
+    }
+    res.json(result[0]);
+  } catch (error) {
+    console.error("Error fetching market:", error);
+    res.status(500).json({ error: "Failed to fetch market" });
+  }
+});
+
+// Trade endpoint for Vercel compatibility
+app.post("/api/trade", async (req, res) => {
+  try {
+    const { marketId, optionIndex, amount, type, trader } = req.body;
+    const market = await db.select().from(markets).where(eq(markets.id, Number(marketId)));
+    if (market.length === 0) {
+      return res.status(404).json({ error: 'Market not found' });
+    }
+    
+    const odds = [...market[0].odds];
+    const k = 0.1;
+    if (type === 'buy') {
+      odds[optionIndex] = Math.min(0.99, odds[optionIndex] + k * amount / 100);
+    } else {
+      odds[optionIndex] = Math.max(0.01, odds[optionIndex] - k * amount / 100);
+    }
+    const total = odds.reduce((a, b) => a + b, 0);
+    const normalizedOdds = odds.map(o => o / total);
+
+    await db.update(markets).set({
+      odds: normalizedOdds,
+      totalVolume: market[0].totalVolume + amount,
+    }).where(eq(markets.id, Number(marketId)));
+
+    broadcast({ type: "trade_executed", data: { marketId, newOdds: normalizedOdds } });
+    res.json({ success: true, newOdds: normalizedOdds });
+  } catch (error) {
+    console.error("Error executing trade:", error);
+    res.status(500).json({ error: "Failed to execute trade" });
+  }
+});
+
 async function checkExpiredMarkets() {
   try {
     const now = new Date();

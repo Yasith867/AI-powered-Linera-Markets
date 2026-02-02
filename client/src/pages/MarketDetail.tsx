@@ -108,7 +108,7 @@ export default function MarketDetail() {
   };
 
   const fetchMarket = async () => {
-    const data = await api.get(`/api/markets/${params?.id}`);
+    const data = await api.get(`/api/get-market?id=${params?.id}`);
     if (data) setMarket(data as Market);
   };
 
@@ -218,11 +218,12 @@ export default function MarketDetail() {
         if (mutationResult.success) {
           setTxStatus(`Transaction submitted! Operation: ${mutationResult.operationId?.slice(0, 8) || 'pending'}...`);
           
-          await api.post(`/api/markets/${params?.id}/trade`, {
-            traderAddress,
+          await api.post(`/api/trade`, {
+            marketId: params?.id,
+            trader: traderAddress,
             optionIndex: useOption,
             amount: useAmount,
-            isBuy,
+            type: isBuy ? 'buy' : 'sell',
             operationId: mutationResult.operationId,
           });
           
@@ -237,11 +238,12 @@ export default function MarketDetail() {
         } else if (mutationResult.error?.includes('Invalid application operation') || mutationResult.error?.includes('application')) {
           setTxStatus("Testnet mode: Recording trade with wallet signature...");
           
-          await api.post(`/api/markets/${params?.id}/trade`, {
-            traderAddress,
+          await api.post(`/api/trade`, {
+            marketId: params?.id,
+            trader: traderAddress,
             optionIndex: useOption,
             amount: useAmount,
-            isBuy,
+            type: isBuy ? 'buy' : 'sell',
             operationId: `testnet_${Date.now()}`,
           });
           
