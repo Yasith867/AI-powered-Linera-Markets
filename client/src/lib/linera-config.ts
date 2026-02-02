@@ -1,4 +1,5 @@
-const DEFAULT_APP_ID = 'e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65010000000000000000000000e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65030000000000000000000000';
+const DEFAULT_APP_ID = 'dc5c4209c9254144b904e4aa31091931f0be4924799cf5bf1a6afd6889b63cc7';
+const DEFAULT_CHAIN_ID = '8a2da4f414c912deb3667d216f6793d5e800cd22f6e4920d468cf2d8241abd98';
 
 export const LINERA_CONFIG = {
   TESTNET_CONWAY: {
@@ -8,9 +9,14 @@ export const LINERA_CONFIG = {
   },
   
   PREDICTION_MARKET_APP_ID: DEFAULT_APP_ID,
+  CHAIN_ID: DEFAULT_CHAIN_ID,
   
   getAppId(): string {
     return this.PREDICTION_MARKET_APP_ID;
+  },
+  
+  getChainId(): string {
+    return this.CHAIN_ID;
   },
   
   isConfigured(): boolean {
