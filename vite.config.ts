@@ -33,5 +33,10 @@ export default defineConfig({
   build: {
     outDir: "../dist/public",
     emptyOutDir: true,
+    sourcemap: false,
+  },
+  define: {
+    'import.meta.env.VITE_LINERA_APP_ID': JSON.stringify(process.env.VITE_LINERA_APP_ID || ''),
+    'import.meta.env.VITE_LINERA_CHAIN_ID': JSON.stringify(process.env.VITE_LINERA_CHAIN_ID || ''),
   },
 });
