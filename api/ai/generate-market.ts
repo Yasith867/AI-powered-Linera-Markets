@@ -1,7 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
-import { db } from '../_db';
-import { markets, marketEvents } from '../../shared/schema';
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
+import * as schema from '../../shared/schema';
+
+const sql = neon(process.env.DATABASE_URL!);
+const db = drizzle(sql, { schema });
 
 const useCloudflare = !!process.env.CLOUDFLARE_API_KEY;
 
@@ -68,7 +72,7 @@ Focus on markets that:
     const eventTime = new Date();
     eventTime.setDate(eventTime.getDate() + daysUntilResolution);
     
-    const [market] = await db.insert(markets).values({
+    const [market] = await db.insert(schema.markets).values({
       title: marketData.title,
       description: marketData.description,
       category: marketData.category || category || "general",
@@ -78,7 +82,7 @@ Focus on markets that:
       createdBy: "ai_agent",
     }).returning();
 
-    await db.insert(marketEvents).values({
+    await db.insert(schema.marketEvents).values({
       marketId: market.id,
       eventType: "ai_market_created",
       data: { prompt: context, category },

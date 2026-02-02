@@ -1,8 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { db } from '../_db';
-import { markets, marketEvents } from '../../shared/schema';
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
 import { desc } from 'drizzle-orm';
+import * as schema from '../../shared/schema';
 import * as lineraClient from '../_linera';
+
+const sql = neon(process.env.DATABASE_URL!);
+const db = drizzle(sql, { schema });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -15,7 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     if (req.method === 'GET') {
-      const allMarkets = await db.select().from(markets).orderBy(desc(markets.createdAt));
+      const allMarkets = await db.select().from(schema.markets).orderBy(desc(schema.markets.createdAt));
       return res.json(allMarkets);
     }
 
@@ -37,7 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         resolveTime.setDate(resolveTime.getDate() + 4);
       }
       
-      const [market] = await db.insert(markets).values({
+      const [market] = await db.insert(schema.markets).values({
         title,
         description,
         category,
@@ -47,7 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         lineraChainId: chain.chainId,
       }).returning();
 
-      await db.insert(marketEvents).values({
+      await db.insert(schema.marketEvents).values({
         marketId: market.id,
         eventType: "market_created",
         data: { title, options, lineraChainId: chain.chainId, txHash: contractResult.txHash },
